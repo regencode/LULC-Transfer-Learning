@@ -1,4 +1,4 @@
-# LULC-Transfer-Learning Project Plan
+# LULC-Transfer-Learning
 
 ## Project Overview
 This project focuses on Land-Use/Land-Cover (LULC) segmentation using transfer learning techniques. We will study the effect of transfer learning on model performance using various backbone architectures and decoder networks.
