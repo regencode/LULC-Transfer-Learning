@@ -1,0 +1,68 @@
+# ======================================
+# Experiment Settings
+# ======================================
+experiment:
+  seed: 42
+  model_name: "cdmamba"   # used for logging / file naming
+  model: "cdmamba" # cdmamba, cmv-t, cmv-s, cmv-b
+  is_train: true
+  dataset_name: "levir" # "levir" or "whu"
+
+paths:
+  save_folder: "/app/"
+  zip_path: false # set to actual path for whu
+  raw_dir: "/app/data/levir_cd"
+  processed_dir: "/app/data/levir_cd_patched"
+
+
+# ======================================
+# Training Parameters
+# ======================================
+training:
+  epochs: 200
+
+  batch_size:
+    train: 8
+    val: 16
+    test: 16
+
+# ======================================
+# Optimizer Configuration
+# ======================================
+optimizer:
+  type: "sgd"
+  lr: 0.01
+  momentum: 0.9
+  weight_decay: 0.0005
+
+# ======================================
+# Scheduler Configuration
+# ======================================
+scheduler: # linear scheduler
+  start_factor: 1.0
+  end_factor: 0.0
+
+# ======================================
+# CDMamba Model config (MODEL-SPECIFIC)
+# ======================================
+#
+# from /CDMamba/config/levir+_cdmamba in the original CDMamba repo
+model:
+  spatial_dims: 2
+  in_channels: 3
+  init_filters: 16
+  out_channels: 2
+  mode: "AGLGF"
+  conv_mode: "orignal_dinner"
+  local_query_model: "orignal_dinner"
+  up_mode: "SRCM"
+  up_conv_mode: "deepwise"
+  resdiual: false
+  blocks_down: [1, 2, 2, 4]
+  blocks_up: [1, 1, 1]
+  diff_abs: "later"
+  stage: 2
+  mamba_act: "relu"
+  norm:
+    type: "GROUP"
+    num_groups: 8

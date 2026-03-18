@@ -1,0 +1,197 @@
+- name: changemambavision playbook
+  hosts: gpu_nodes 
+  become: true
+  vars:
+    nvidia_driver: "nvidia-driver-570-server" # for V100
+    
+    data_dir: "/data"
+    levir_cd_url: "https://drive.google.com/drive/folders/1dLuzldMRmbBNKPpUkX8Z53hi6NHLrWim"
+    levir_cd_dest: "{{ data_dir }}/levir_cd"
+
+    whu_cd_url: "https://gpcv.whu.edu.cn/data/Building%20change%20detection%20dataset_add.zip"
+    whu_cd_dest: "{{ data_dir }}/whu_cd.zip"
+
+    research_repo_url: "https://github.com/regencode/ChangeMambaVision.git"
+    research_repo_dest: "/opt/ChangeMambaVision"
+
+    NVIDIA_CONTAINER_TOOLKIT_VERSION: 1.18.2-1
+
+  tasks: 
+  - name: Fix interrupted dpkg installations
+    ansible.builtin.command:
+      cmd: dpkg --configure -a
+    become: true
+
+  - name: Ensure opt/configs directory exists
+    ansible.builtin.file:
+      path: /opt/configs
+      state: directory
+      mode: '0755'
+
+  - name: Copy host-specific config file to remote host
+    ansible.builtin.copy:
+      src: "{{ config_file }}"
+      dest: /opt/configs/config.yaml
+      mode: '0755'
+    become: true
+
+  - name: Ensure apt keyrings directory exists
+    ansible.builtin.file:
+      path: /etc/apt/keyrings
+      state: directory
+      mode: '0755'
+
+  - name: Download NVIDIA GPG key
+    ansible.builtin.get_url:
+      url: https://nvidia.github.io/libnvidia-container/gpgkey
+      dest: /etc/apt/keyrings/nvidia-container-toolkit-keyring.asc
+      mode: '0644'
+    become: true
+
+  - name: Convert NVIDIA key to binary
+    ansible.builtin.command:
+      cmd: >
+        gpg --dearmor
+        -o /etc/apt/keyrings/nvidia-container-toolkit-keyring.gpg
+        /etc/apt/keyrings/nvidia-container-toolkit-keyring.asc
+      creates: /etc/apt/keyrings/nvidia-container-toolkit-keyring.gpg
+
+  - name: Download NVIDIA Container Toolkit repo file
+    ansible.builtin.get_url:
+      url: https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list
+      dest: /etc/apt/sources.list.d/nvidia-container-toolkit.list
+      mode: '0644'
+    become: true
+
+  - name: Add NVIDIA repository (classic format)
+    ansible.builtin.copy:
+      dest: /etc/apt/sources.list.d/nvidia-container-toolkit.list
+      content: |
+        deb [signed-by=/etc/apt/keyrings/nvidia-container-toolkit-keyring.gpg] https://nvidia.github.io/libnvidia-container/stable/deb/amd64 /
+      mode: '0644'
+    become: true
+
+  - name: Install NVIDIA drivers and container drivers
+    ansible.builtin.apt:
+      name: 
+        - "{{ nvidia_driver }}"
+        - "nvidia-container-toolkit={{ NVIDIA_CONTAINER_TOOLKIT_VERSION }}"
+        - "nvidia-container-toolkit-base={{ NVIDIA_CONTAINER_TOOLKIT_VERSION }}"
+        - "libnvidia-container-tools={{ NVIDIA_CONTAINER_TOOLKIT_VERSION }}"
+        - "libnvidia-container1={{ NVIDIA_CONTAINER_TOOLKIT_VERSION }}"
+      state: present
+      update_cache: yes
+    become: true
+
+  - name: Download Docker GPG key
+    ansible.builtin.get_url:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      dest: /etc/apt/keyrings/docker.asc
+      mode: '0644'
+    become: true
+
+  - name: Add Docker repository (deb822 format)
+    ansible.builtin.copy:
+      dest: /etc/apt/sources.list.d/docker.sources
+      mode: '0644'
+      content: |
+        Types: deb
+        URIs: https://download.docker.com/linux/ubuntu
+        Suites: {{ ansible_facts["distribution_release"] }}
+        Components: stable
+        Signed-By: /etc/apt/keyrings/docker.asc
+
+  - name: Install docker compose drivers
+    ansible.builtin.apt:
+      name: 
+      - docker-ce 
+      - docker-ce-cli 
+      - containerd.io
+      - docker-buildx-plugin 
+      - docker-compose-plugin
+      state: present
+      update_cache: yes
+    become: true
+
+  - name: Upgrade all packages to latest
+    ansible.builtin.apt:
+      upgrade: dist
+      update_cache: yes
+      state: fixed
+    become: true
+
+  - name: Install system (apt) dependencies
+    ansible.builtin.apt:
+      name: 
+        - git
+        - python3
+        - python3-pip
+        - python3-venv
+        - ca-certificates
+        - curl
+        - gnupg2
+      state: present
+    become: true
+
+
+  - name: Configure nvidia-ctk runtime for docker
+    ansible.builtin.command:
+      cmd: nvidia-ctk runtime configure --runtime=docker
+    become: true
+
+  - name: Create python venv
+    ansible.builtin.command:
+      cmd: python3 -m venv /opt/ml-venv
+    args:
+      creates: /opt/ml-venv
+
+  - name: Install python dependencies
+    ansible.builtin.pip: 
+      name:
+          - gdown
+      state: present
+      executable: /opt/ml-venv/bin/pip
+
+  - name: Start docker
+    ansible.builtin.systemd:
+      name: docker
+      state: restarted
+      enabled: true
+
+  - name: Ensure /data directory exists
+    ansible.builtin.file:
+      path: /data
+      state: directory
+      mode: '0755'
+
+  - name: Download levir_cd
+    ansible.builtin.shell: |
+      /opt/ml-venv/bin/gdown --folder "{{ levir_cd_url }}" -O "{{ levir_cd_dest }}"
+    args:
+        creates: "{{ levir_cd_dest }}/train.zip"   # This ensures the task is skipped if the train.zip folder exists
+
+  - name: Download whu_cd
+    ansible.builtin.get_url:
+      url: "{{ whu_cd_url }}"
+      dest: "{{ whu_cd_dest }}"
+      mode: '0644'
+      checksum: "sha256:3c014fff27d7ca814690ea27242fb1aa329521b89fedfd0fdd676954dfd0e2c4"
+
+  - name: Clone research repo
+    ansible.builtin.git:
+      repo: "{{ research_repo_url }}"
+      dest: "{{ research_repo_dest }}"
+
+  - name: Build docker image
+    ansible.builtin.shell: docker compose build --progress=plain
+    args:
+      chdir: "{{ research_repo_dest }}/docker"
+    become: true
+
+  - name: Start docker image
+    ansible.builtin.shell: docker compose up -d
+    args:
+      chdir: "{{ research_repo_dest }}/docker"
+    become: true
+
+
