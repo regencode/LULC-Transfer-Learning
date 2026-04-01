@@ -11,21 +11,21 @@ import json
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 
-from src.transferlearning.datasets.registry import get_dataset
-from src.transferlearning.trainers.segmentation_trainer import SegmentationTrainer
-from src.transferlearning.datasets.base_dataset import NUM_CLASSES
+from transferlearning.datasets.registry import get_dataset
+from transferlearning.trainers.segmentation_trainer import SegmentationTrainer
+from transferlearning.datasets.base_dataset import NUM_CLASSES
 
 # ensure modules register themselves
-import src.transferlearning.models.backbones.resnet       # noqa: F401
-import src.transferlearning.models.backbones.efficientnet  # noqa: F401
-import src.transferlearning.models.backbones.vit           # noqa: F401
-import src.transferlearning.models.backbones.swint         # noqa: F401
-import src.transferlearning.models.backbones.vmamba        # noqa: F401
-import src.transferlearning.models.backbones.mambavision   # noqa: F401
-import src.transferlearning.models.decoders.unet           # noqa: F401
-import src.transferlearning.models.decoders.deeplabv3      # noqa: F401
-import src.transferlearning.datasets.potsdam               # noqa: F401
-import src.transferlearning.datasets.vaihingen             # noqa: F401
+import transferlearning.models.backbones.resnet       # noqa: F401
+import transferlearning.models.backbones.efficientnet  # noqa: F401
+import transferlearning.models.backbones.vit           # noqa: F401
+import transferlearning.models.backbones.swint         # noqa: F401
+import transferlearning.models.backbones.vmamba        # noqa: F401
+import transferlearning.models.backbones.mambavision   # noqa: F401
+import transferlearning.models.decoders.unet           # noqa: F401
+import transferlearning.models.decoders.deeplabv3      # noqa: F401
+import transferlearning.datasets.potsdam               # noqa: F401
+import transferlearning.datasets.vaihingen             # noqa: F401
 
 
 def parse_args():
