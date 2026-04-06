@@ -1,5 +1,6 @@
 import argparse
 import subprocess
+import zipfile
 from pathlib import Path
 import shutil
 
@@ -24,9 +25,13 @@ def main():
 
     original_potsdam_root = temp / "Potsdam"
     print(f"Unpacking Potsdam images...")
-    shutil.unpack_archive(original_potsdam_root / "2_Ortho_RGB.zip", data_root / "images")
+    with zipfile.ZipFile(original_potsdam_root / "2_Ortho_RGB.zip") as z:
+        for member in z.namelist():
+            filename = Path(member).name # Strip the top-level folder
+            if filename:  # skip directories
+                (data_root / "images" / filename).write_bytes(z.read(member))
     print(f"Unpacking Potsdam labels...")
     shutil.unpack_archive(original_potsdam_root / "5_Labels_all.zip", data_root / "labels")
-
+    print(f"Potsdam dataset unpacking complete.")
 if __name__ == "__main__":
     main()
