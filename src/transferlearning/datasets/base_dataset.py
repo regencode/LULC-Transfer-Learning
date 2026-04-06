@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Callable, Tuple
+from typing import Optional, Callable, Tuple, List, Dict
 import numpy as np
 import torch
 from torch.utils.data import Dataset
@@ -36,19 +36,25 @@ class ISPRSBaseDataset(Dataset):
 
     def __init__(
         self,
-        root: str,
-        split: str = "train",
+        image_folder: Path,
+        label_folder: Path,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
     ):
-        self.root = Path(root)
-        self.split = split
         self.transform = transform
         self.target_transform = target_transform
-        self.images, self.labels = self._load_file_list()
+        self.images = image_folder
+        self.labels = label_folder
+        self.file_list = self._load_file_list()
 
-    def _load_file_list(self):
-        raise NotImplementedError
+    def _load_file_list(self) -> List[Tuple[str, str]]:
+        image_label_pairs = []
+        for image_path in Path(self.images).iterdir():
+            if image_path.name.endswith("tfw"):
+                continue # skip .tfw files
+            label_path = f"{image_path.name[:-7]}_label.tif"
+            image_label_pairs.append((image_path, label_path))
+        return image_label_pairs
 
     @staticmethod
     def rgb_to_class_index(label_rgb: np.ndarray) -> np.ndarray:
@@ -60,22 +66,18 @@ class ISPRSBaseDataset(Dataset):
         return class_index
 
     def __len__(self) -> int:
-        return len(self.images)
+        return len(self.file_list)
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        image = Image.open(self.images[idx]).convert("RGB")
-        label = Image.open(self.labels[idx]).convert("RGB")
-
+        image = Image.open(self.file_list[idx]).convert("RGB")
+        label = Image.open(self.file_list[idx]).convert("RGB")
         if self.transform:
             image = self.transform(image)
         else:
             image = torch.from_numpy(np.array(image, dtype=np.float32).transpose(2, 0, 1) / 255.0)
-
         label_np = np.array(label, dtype=np.uint8)
         label_idx = self.rgb_to_class_index(label_np)
-
         if self.target_transform:
             label_idx = self.target_transform(label_idx)
-
         label_tensor = torch.from_numpy(label_idx).long()
         return image, label_tensor

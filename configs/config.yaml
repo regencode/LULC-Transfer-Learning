@@ -2,7 +2,7 @@
 #
 # ============ Dataset ============
 dataset: potsdam  # potsdam | vaihingen
-data_dir: data/processed/potsdam
+data_dir: data/
 
 # ============ Model Architecture ============
 # Train only
