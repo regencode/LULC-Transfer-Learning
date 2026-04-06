@@ -1,20 +1,19 @@
-- name: changemambavision playbook
+- name: lulc transfer learning playbook
   hosts: gpu_nodes 
   become: true
   vars:
-    nvidia_driver: "nvidia-driver-570-server" # for V100
-    
+    nvidia_driver: "nvidia-driver-565-server" 
     data_dir: "/data"
-    levir_cd_url: "https://drive.google.com/drive/folders/1dLuzldMRmbBNKPpUkX8Z53hi6NHLrWim"
-    levir_cd_dest: "{{ data_dir }}/levir_cd"
+    potsdam_url: "https://drive.google.com/file/d/19HCP2QMaQ8FPw6ljMkAEaK4gcwIf8mNW/view?usp=sharing"
+    potsdam_dest: "{{ data_dir }}/levir_cd"
 
-    whu_cd_url: "https://gpcv.whu.edu.cn/data/Building%20change%20detection%20dataset_add.zip"
-    whu_cd_dest: "{{ data_dir }}/whu_cd.zip"
+    #vaihingen_url: "https://gpcv.whu.edu.cn/data/Building%20change%20detection%20dataset_add.zip"
+    #vaihingen_dest: "{{ data_dir }}/whu_cd.zip"
 
-    research_repo_url: "https://github.com/regencode/ChangeMambaVision.git"
-    research_repo_dest: "/opt/ChangeMambaVision"
+    research_repo_url: "https://github.com/regencode/LULC-Transfer-Learning.git"
+    research_repo_dest: "/opt/LULC-Transfer-Learning"
 
-    NVIDIA_CONTAINER_TOOLKIT_VERSION: 1.18.2-1
+    NVIDIA_CONTAINER_TOOLKIT_VERSION: 1.19.0-1
 
   tasks: 
   - name: Fix interrupted dpkg installations
@@ -56,32 +55,52 @@
         /etc/apt/keyrings/nvidia-container-toolkit-keyring.asc
       creates: /etc/apt/keyrings/nvidia-container-toolkit-keyring.gpg
 
-  - name: Download NVIDIA Container Toolkit repo file
-    ansible.builtin.get_url:
-      url: https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list
-      dest: /etc/apt/sources.list.d/nvidia-container-toolkit.list
-      mode: '0644'
-    become: true
-
-  - name: Add NVIDIA repository (classic format)
+  - name: Add NVIDIA repository (deb822 format)
     ansible.builtin.copy:
-      dest: /etc/apt/sources.list.d/nvidia-container-toolkit.list
-      content: |
-        deb [signed-by=/etc/apt/keyrings/nvidia-container-toolkit-keyring.gpg] https://nvidia.github.io/libnvidia-container/stable/deb/amd64 /
+      dest: /etc/apt/sources.list.d/nvidia-container-toolkit.sources
       mode: '0644'
-    become: true
+      content: |
+        Types: deb
+        URIs: https://nvidia.github.io/libnvidia-container/stable/deb
+        Suites: amd64
+        Components: main
+        Signed-By: /etc/apt/keyrings/nvidia-container-toolkit-keyring.gpg
 
-  - name: Install NVIDIA drivers and container drivers
+  - name: Update apt cache
     ansible.builtin.apt:
-      name: 
-        - "{{ nvidia_driver }}"
-        - "nvidia-container-toolkit={{ NVIDIA_CONTAINER_TOOLKIT_VERSION }}"
-        - "nvidia-container-toolkit-base={{ NVIDIA_CONTAINER_TOOLKIT_VERSION }}"
-        - "libnvidia-container-tools={{ NVIDIA_CONTAINER_TOOLKIT_VERSION }}"
-        - "libnvidia-container1={{ NVIDIA_CONTAINER_TOOLKIT_VERSION }}"
-      state: present
       update_cache: yes
     become: true
+
+  - name: Install nvidia-container-toolkit
+    ansible.builtin.apt:
+      name:
+        - nvidia-container-toolkit
+      state: present
+    become: true
+
+  - name: Find nvidia-ctk binary path
+    ansible.builtin.shell: find /usr -name "nvidia-ctk" -type f 2>/dev/null | head -1
+    register: nvidia_ctk_path
+    changed_when: false
+    failed_when: false
+
+  - name: Find nvidia-container-cli binary path
+    ansible.builtin.shell: which nvidia-container-cli 2>/dev/null || echo ""
+    register: nvidia_cli_path
+    changed_when: false
+    failed_when: false
+
+  - name: Configure docker nvidia runtime (nvidia-ctk)
+    ansible.builtin.command:
+      cmd: "{{ nvidia_ctk_path.stdout }} runtime configure --runtime=docker"
+    become: true
+    when: nvidia_ctk_path.stdout | length > 0
+
+  - name: Configure docker nvidia runtime (legacy nvidia-container-cli)
+    ansible.builtin.command:
+      cmd: nvidia-container-cli --runtime=docker configure
+    become: true
+    when: nvidia_ctk_path.stdout | length == 0 and nvidia_cli_path.stdout | length > 0
 
   - name: Download Docker GPG key
     ansible.builtin.get_url:
@@ -134,11 +153,6 @@
     become: true
 
 
-  - name: Configure nvidia-ctk runtime for docker
-    ansible.builtin.command:
-      cmd: nvidia-ctk runtime configure --runtime=docker
-    become: true
-
   - name: Create python venv
     ansible.builtin.command:
       cmd: python3 -m venv /opt/ml-venv
@@ -164,18 +178,9 @@
       state: directory
       mode: '0755'
 
-  - name: Download levir_cd
-    ansible.builtin.shell: |
-      /opt/ml-venv/bin/gdown --folder "{{ levir_cd_url }}" -O "{{ levir_cd_dest }}"
-    args:
-        creates: "{{ levir_cd_dest }}/train.zip"   # This ensures the task is skipped if the train.zip folder exists
-
-  - name: Download whu_cd
-    ansible.builtin.get_url:
-      url: "{{ whu_cd_url }}"
-      dest: "{{ whu_cd_dest }}"
-      mode: '0644'
-      checksum: "sha256:3c014fff27d7ca814690ea27242fb1aa329521b89fedfd0fdd676954dfd0e2c4"
+  - name: Download Potsdam dataset
+    ansible.builtin.command:
+      cmd: gdown "{{ potsdam_url }}" -O "{{ potsdam_dest }}"
 
   - name: Clone research repo
     ansible.builtin.git:

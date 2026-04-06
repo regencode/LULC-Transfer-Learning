@@ -32,28 +32,7 @@ import transferlearning.datasets.vaihingen             # noqa: F401
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Train LULC Segmentation Model")
-
-    parser.add_argument("--backbone", type=str, required=True, help="Backbone name (e.g. resnet50, swin_t, vmamba_tiny)")
-    parser.add_argument("--decoder", type=str, required=True, help="Decoder name (e.g. unet, deeplabv3plus)")
-    parser.add_argument("--dataset", type=str, required=True, help="Dataset name (e.g. potsdam, vaihingen)")
-    parser.add_argument("--data_dir", type=str, required=True, help="Path to dataset root")
-
-    parser.add_argument("--num_classes", type=int, default=NUM_CLASSES)
-    parser.add_argument("--pretrained", action="store_true", default=True)
-    parser.add_argument("--no_pretrained", action="store_true", help="Disable ImageNet pretrained weights")
-
-    parser.add_argument("--lr", type=float, default=1e-3)
-    parser.add_argument("--weight_decay", type=float, default=1e-4)
-    parser.add_argument("--optimizer", type=str, default="adamw", choices=["adamw", "sgd"])
-    parser.add_argument("--scheduler", type=str, default="cosine", choices=["cosine", "plateau", "none"])
-    parser.add_argument("--batch_size", type=int, default=8)
-    parser.add_argument("--max_epochs", type=int, default=100)
-    parser.add_argument("--num_workers", type=int, default=4)
-
-    parser.add_argument("--experiment_name", type=str, default="default")
-    parser.add_argument("--output_dir", type=str, default="outputs")
-    parser.add_argument("--precision", type=int, default=32, choices=[16, 32])
-    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--config", type=str, required=True, help="Path to config file") 
 
     return parser.parse_args()
 
