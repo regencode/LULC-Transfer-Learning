@@ -17,11 +17,16 @@ def main():
     for sub in ["images", "labels", "temp"]:
         (data_root / sub).mkdir(parents=True, exist_ok=True)
     temp = data_root / "temp"
+    print(f"Copying Potsdam from {source} to {temp}...")
     shutil.copy(source, temp)
+    print(f"Unpacking Potsdam...")
     shutil.unpack_archive(temp / source.name, temp)
+
     original_potsdam_root = temp / "Potsdam"
-    shutil.unpack_archive(original_potsdam_root / "2_Ortho_RGB.zip", source / "images")
-    shutil.unpack_archive(original_potsdam_root / "5_Labels_all.zip", source / "labels")
+    print(f"Unpacking Potsdam images...")
+    shutil.unpack_archive(original_potsdam_root / "2_Ortho_RGB.zip", data_root / "images")
+    print(f"Unpacking Potsdam labels...")
+    shutil.unpack_archive(original_potsdam_root / "5_Labels_all.zip", data_root / "labels")
 
 if __name__ == "__main__":
     main()
