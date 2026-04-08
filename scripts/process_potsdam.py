@@ -24,8 +24,8 @@ def slice_image_with_stride(image_path: Path, save_folder_path: Path,
     h, w, c = image.shape
 
     # Calculate padded dimensions to ensure complete coverage
-    num_patches_h = ((h - H) // stride) + 1 if h > H else 1
-    num_patches_w = ((w - W) // stride) + 1 if w > W else 1
+    num_patches_h = max(1, (h - H) // stride + 1)
+    num_patches_w = max(1, (w - W) // stride + 1)
 
     padded_h = (num_patches_h - 1) * stride + H
     padded_w = (num_patches_w - 1) * stride + W
