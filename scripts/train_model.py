@@ -19,6 +19,15 @@ from typing import Any
 from transferlearning.datasets.registry import get_dataset
 from transferlearning.trainers.segmentation_trainer import SegmentationTrainer
 
+# ensure modules register themselves
+import transferlearning.models.backbones.resnet       # noqa: F401
+import transferlearning.models.backbones.efficientnet  # noqa: F401
+import transferlearning.models.backbones.vit           # noqa: F401
+import transferlearning.models.backbones.swint         # noqa: F401
+import transferlearning.models.backbones.vmamba        # noqa: F401
+import transferlearning.models.backbones.mambavision   # noqa: F401
+import transferlearning.models.decoders.unet           # noqa: F401
+import transferlearning.models.decoders.deeplabv3      # noqa: F401
 import transferlearning.datasets.potsdam               # noqa: F401
 import transferlearning.datasets.vaihingen             # noqa: F401
 

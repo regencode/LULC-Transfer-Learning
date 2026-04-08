@@ -4,7 +4,6 @@ import torch.nn as nn
 
 BACKBONE_REGISTRY: Dict[str, Callable[..., nn.Module]] = {}
 
-
 def register_backbone(name: str):
     def decorator(cls):
         if name in BACKBONE_REGISTRY:
