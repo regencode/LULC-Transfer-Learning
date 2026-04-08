@@ -47,7 +47,7 @@ def slice_image_with_stride(image_path: Path, save_folder_path: Path,
 
     # Save patches
     for patch_idx in range(patches.shape[0]):
-        filename = f'{image_path.name.removesuffix(".tif")}_{patch_idx}.tif'
+        filename = f'{"_".join(image_path.name.split("_")[:-1])}_{patch_idx}_{image_path.name.split("_")[-1]}'
         Image.fromarray(patches[patch_idx]).save(save_folder_path / filename)
     return
 

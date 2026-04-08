@@ -64,7 +64,8 @@ class ISPRSBaseDataset(Dataset):
             label_path = Path(self.labels) / f"{image_path.name[:-7]}label.tif"
             image_label_pairs.append((image_path, label_path))
         train_pairs, val_pairs = train_test_split(image_label_pairs, 
-                                                  train_size=self.train_size, random_state=self.seed)
+                                                  train_size=self.train_size, 
+                                                  random_state=self.seed)
         test_pairs, val_pairs = train_test_split(val_pairs, 
                                                  train_size=self.test_size,
                                                  random_state=self.seed)
