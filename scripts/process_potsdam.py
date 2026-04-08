@@ -98,5 +98,5 @@ def main():
     shutil.move(temp / "patch_images", data_root / "images")
     shutil.move(temp / "patch_labels", data_root / "labels")
 
-    if __name__ == "__main__":
-        main()
+if __name__ == "__main__":
+    main()
