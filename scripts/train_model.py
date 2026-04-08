@@ -13,6 +13,7 @@ import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger, CSVLogger, WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, LearningRateMonitor
 from torch.utils.data import DataLoader
+from typing import Any
 
 from transferlearning.datasets.registry import get_dataset
 from transferlearning.trainers.segmentation_trainer import SegmentationTrainer
@@ -35,7 +36,6 @@ def parse_args():
     parser.add_argument("--decoder", type=str, default=None)
     parser.add_argument("--num_classes", type=int, default=6)
     parser.add_argument("--pretrained", action="store_true", default=True)
-    parser.add_argument("--no_pretrained", action="store_false", dest="pretrained")
 
     # Data
     parser.add_argument("--dataset", type=str, default=None)
@@ -76,7 +76,7 @@ def parse_args():
 
 
 def main():
-    args = parse_args()
+    args : Any = parse_args() # silence warnings
     pl.seed_everything(args.seed)
 
     pretrained = not args.no_pretrained
