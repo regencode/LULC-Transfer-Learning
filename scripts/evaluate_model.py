@@ -2,18 +2,19 @@
 """Evaluation script for trained LULC segmentation models.
 
 Usage:
-    python scripts/evaluate_model.py --checkpoint outputs/checkpoints/default/last.ckpt --dataset potsdam --data_dir data/processed/potsdam
+    python scripts/evaluate_model.py --checkpoint outputs/checkpoints/default/last.ckpt --config configs/config.yaml
 """
 
 import argparse
 import json
+import os
+import yaml
 
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 
 from transferlearning.datasets.registry import get_dataset
 from transferlearning.trainers.segmentation_trainer import SegmentationTrainer
-from transferlearning.datasets.base_dataset import NUM_CLASSES
 
 # ensure modules register themselves
 import transferlearning.models.backbones.resnet       # noqa: F401
@@ -28,22 +29,55 @@ import transferlearning.datasets.potsdam               # noqa: F401
 import transferlearning.datasets.vaihingen             # noqa: F401
 
 
+def load_config(path):
+    with open(path) as f:
+        return yaml.safe_load(f)
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Evaluate LULC Segmentation Model")
-
+    parser.add_argument("--config", type=str, default="configs/config.yaml", help="Path to config file")
     parser.add_argument("--checkpoint", type=str, required=True, help="Path to model checkpoint")
-    parser.add_argument("--dataset", type=str, required=True, help="Dataset name (e.g. potsdam, vaihingen)")
-    parser.add_argument("--data_dir", type=str, required=True, help="Path to dataset root")
 
+    # Dataset (from config, can override inline)
+    parser.add_argument("--dataset", type=str, default=None)
+    parser.add_argument("--data_dir", type=str, default=None)
+
+    # Evaluation options (script defaults, override inline)
     parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--num_workers", type=int, default=4)
     parser.add_argument("--output_file", type=str, default=None, help="Path to save JSON results")
 
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    # Load config file
+    config = {}
+    if args.config and os.path.exists(args.config):
+        config = load_config(args.config)
+
+    # Merge: CLI args override config (only if not None)
+    merged = {**config}
+    for k, v in vars(args).items():
+        if v is not None:
+            merged[k] = v
+
+    class Config:
+        def __init__(self, d):
+            for k, v in d.items():
+                setattr(self, k, v)
+
+    return Config(merged)
 
 
 def main():
     args = parse_args()
+
+    print("\n" + "="*60)
+    print("Evaluation Configuration")
+    print("="*60)
+    for key in sorted(vars(args).keys()):
+        print(f"  {key}: {getattr(args, key)}")
+    print("="*60 + "\n")
 
     test_dataset = get_dataset(args.dataset, root=args.data_dir, split="test")
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)

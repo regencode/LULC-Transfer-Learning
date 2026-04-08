@@ -1,33 +1,11 @@
 # Unified config for training and evaluation
-#
-# ============ Dataset ============
-dataset: potsdam  # potsdam | vaihingen
-data_dir: data/
+# Only contains controlled experiment variables + explicit debugging args
 
-# ============ Model Architecture ============
-# Train only
+# ============ Controlled Variables ============
 backbone: resnet50  # resnet50, swin_t, vmamba_tiny, vit_base, efficientnet_b0, etc.
 decoder: unet  # unet | deeplabv3plus
-num_classes: 6
 pretrained: true
+dataset: potsdam  # potsdam | vaihingen
 
-# ============ Training Hyperparameters ============
-# Train only
-lr: 1e-4
-weight_decay: 0.0001
-optimizer: adamw  # adamw | sgd
-scheduler: linear # linear | none
-batch_size: 8
-max_epochs: 100
-num_workers: 4
-
-# ============ Logging & Checkpoints ============
-experiment_name: default
-output_dir: outputs
-precision: 16 # 16 | 32
-seed: 42
-
-# ============ Evaluation ============
-# Eval only
-checkpoint: outputs/checkpoints/default/last.ckpt
-output_file: null  # path to save JSON results (optional)
+# ============ Explicit Args ============
+data_dir: data/  # root directory for dataset

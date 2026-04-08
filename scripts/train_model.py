@@ -2,7 +2,8 @@
 """Training script for LULC semantic segmentation.
 
 Usage:
-    python scripts/train_model.py --backbone resnet50 --decoder unet --dataset potsdam --data_dir data/processed/potsdam
+    python scripts/train_model.py --lr 1e-3 --batch_size 16
+    # Controlled vars from config.yaml, hyperparameters override inline
 """
 
 import argparse
@@ -29,28 +30,25 @@ def load_config(path):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Train LULC Segmentation Model")
-    parser.add_argument("--config", type=str, help="Path to config file")
+    parser.add_argument("--config", type=str, default="configs/config.yaml", help="Path to config file")
 
-    # Model
+    # Controlled variables (from config, can override inline)
     parser.add_argument("--backbone", type=str, default=None)
     parser.add_argument("--decoder", type=str, default=None)
-    parser.add_argument("--num_classes", type=int, default=6)
-    parser.add_argument("--pretrained", action="store_true", default=True)
-
-    # Data
+    parser.add_argument("--pretrained", type=str, default=None)  # "true"/"false" or None
     parser.add_argument("--dataset", type=str, default=None)
     parser.add_argument("--data_dir", type=str, default=None)
+
+    # Hyperparameters (script defaults, override inline)
     parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--num_workers", type=int, default=4)
-
-    # Training
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--weight_decay", type=float, default=0.0001)
     parser.add_argument("--optimizer", type=str, default="adamw")
     parser.add_argument("--scheduler", type=str, default="linear")
     parser.add_argument("--max_epochs", type=int, default=100)
 
-    # Logging
+    # Logging (script defaults, override inline)
     parser.add_argument("--experiment_name", type=str, default="default")
     parser.add_argument("--output_dir", type=str, default="outputs")
     parser.add_argument("--precision", type=int, default=16)
@@ -59,13 +57,18 @@ def parse_args():
 
     args = parser.parse_args()
 
-    # Load config file if provided
+    # Load config file
     config = {}
     if args.config:
-        config = load_config(args.config)
+        config_path = args.config if args.config else "configs/config.yaml"
+        if os.path.exists(config_path):
+            config = load_config(config_path)
 
-    # Merge: CLI args override config
-    merged = {**config, **{k: v for k, v in vars(args).items() if v is not None}}
+    # Merge: CLI args override config (only if not None)
+    merged = {**config}
+    for k, v in vars(args).items():
+        if v is not None:
+            merged[k] = v
 
     class Config:
         def __init__(self, d):
@@ -77,9 +80,17 @@ def parse_args():
 
 def main():
     args : Any = parse_args() # silence warnings
+    
+    print("\n" + "="*60)
+    print("Training Configuration")
+    print("="*60)
+    for key in sorted(vars(args).keys()):
+        print(f"  {key}: {getattr(args, key)}")
+    print("="*60 + "\n")
+    
     pl.seed_everything(args.seed)
 
-    pretrained = not args.no_pretrained
+    pretrained = args.pretrained if isinstance(args.pretrained, bool) else (args.pretrained.lower() == "true" if args.pretrained else True)
 
     train_dataset = get_dataset(args.dataset, root=args.data_dir, split="train")
     val_dataset = get_dataset(args.dataset, root=args.data_dir, split="val")
@@ -90,7 +101,7 @@ def main():
     model = SegmentationTrainer(
         backbone_name=args.backbone,
         decoder_name=args.decoder,
-        num_classes=args.num_classes,
+        num_classes=6,
         pretrained=pretrained,
         learning_rate=args.lr,
         weight_decay=args.weight_decay,
