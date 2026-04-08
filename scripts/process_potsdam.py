@@ -10,7 +10,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Process Potsdam dataset")
     parser.add_argument("--source", type=str, required=True, help="Path to Potsdam .zip file")
     parser.add_argument("--dest", type=str, required=True, help="Place to unzip and process Potsdam files")
-    parser.add_argument("--skip-patchify", action='store-true', help="Skip patchify")
+    parser.add_argument("--skip-patchify", action="store_true", help="Skip patchify")
     parser.add_argument("--patch-width", type=int, default=256, help="Width of each patch")
     parser.add_argument("--patch-height", type=int, default=256, help="Height of each patch")
     parser.add_argument("--patch-stride", type=int, default=128, help="Stride between each patch")
