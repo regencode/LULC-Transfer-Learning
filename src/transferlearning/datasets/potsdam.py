@@ -24,34 +24,19 @@ class PotsdamDataset(ISPRSBaseDataset):
         self,
         root: str,
         split: str = "train",
+        train_size: float = 0.8,
+        test_size: float = 0.5,
+        seed: int = 42,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
     ):
-        super().__init__(root, split, transform, target_transform)
-
-    def _load_file_list(self) -> Tuple[List[Path], List[Path]]:
-        split_file = self.root / "splits" / f"{self.split}.txt"
-        if not split_file.exists():
-            raise FileNotFoundError(f"Split file not found: {split_file}")
-
-        stems = split_file.read_text().strip().splitlines()
-        image_dir = self.root / "images"
-        label_dir = self.root / "labels"
-
-        images, labels = [], []
-        for stem in stems:
-            stem = stem.strip()
-            img = self._find_file(image_dir, stem)
-            lbl = self._find_file(label_dir, stem)
-            images.append(img)
-            labels.append(lbl)
-
-        return images, labels
-
-    @staticmethod
-    def _find_file(directory: Path, stem: str) -> Path:
-        for ext in [".tif", ".png", ".jpg"]:
-            path = directory / f"{stem}{ext}"
-            if path.exists():
-                return path
-        raise FileNotFoundError(f"No image found for stem '{stem}' in {directory}")
+        self.image_folder = Path(root) / "images"
+        self.label_folder = Path(root) / "labels"
+        super().__init__(self.image_folder, self.label_folder, 
+                         split=split, 
+                         train_size=train_size,
+                         test_size=test_size,
+                         seed=seed,
+                         transform=transform,
+                         target_transform=target_transform
+        )
