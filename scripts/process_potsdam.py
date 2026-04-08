@@ -87,16 +87,18 @@ def main():
     print(f"Potsdam dataset unpacking complete.")
     if args.skip_patchify: return
     # patchify
-    patchify_images_in_folder(data_root / "images", temp / "patch_images", 
+    shutil.move(data_root / "images", temp / "images")
+    shutil.move(data_root / "labels", temp / "labels")
+    print(f"Patchifying images...")
+    patchify_images_in_folder(temp / "images", data_root / "images", 
                               args.patch_height,
                               args.patch_width,
                               args.patch_stride)
-    patchify_images_in_folder(data_root / "labels", temp / "patch_labels", 
+    print(f"Patchifying labels...")
+    patchify_images_in_folder(temp / "labels", data_root / "labels", 
                               args.patch_height,
                               args.patch_width,
                               args.patch_stride)
-    shutil.move(temp / "patch_images", data_root / "images")
-    shutil.move(temp / "patch_labels", data_root / "labels")
 
 if __name__ == "__main__":
     main()
