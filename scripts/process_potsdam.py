@@ -1,15 +1,68 @@
 import argparse
-import subprocess
 import zipfile
 from pathlib import Path
 import shutil
+import numpy as np
+import einops as ein
+from PIL import Image 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Process Potsdam dataset")
     parser.add_argument("--source", type=str, required=True, help="Path to Potsdam .zip file")
     parser.add_argument("--dest", type=str, required=True, help="Place to unzip and process Potsdam files")
+    parser.add_argument("--skip-patchify", action='store-true', help="Skip patchify")
+    parser.add_argument("--patch-width", type=int, default=256, help="Width of each patch")
+    parser.add_argument("--patch-height", type=int, default=256, help="Height of each patch")
+    parser.add_argument("--patch-stride", type=int, default=128, help="Stride between each patch")
     return parser.parse_args()
 
+def slice_image_with_stride(image_path: Path, save_folder_path: Path, 
+                            H:       int  =  256,
+                            W:       int  =  256,
+                            stride:  int  =  128):
+    image = np.array(Image.open(image_path).convert("RGB"))
+    h, w, c = image.shape
+
+    # Calculate padded dimensions to ensure complete coverage
+    num_patches_h = ((h - H) // stride) + 1 if h > H else 1
+    num_patches_w = ((w - W) // stride) + 1 if w > W else 1
+
+    padded_h = (num_patches_h - 1) * stride + H
+    padded_w = (num_patches_w - 1) * stride + W
+
+    # Pad image (using edge replication for better results)
+    padded_image = np.pad(image, ((0, padded_h - h), (0, padded_w - w), (0, 0)), 
+                          mode='edge')
+
+    # Extract patches using sliding window
+    patches = []
+    for i in range(num_patches_h):
+        for j in range(num_patches_w):
+            start_h = i * stride
+            start_w = j * stride
+            patch = padded_image[start_h:start_h + H, start_w:start_w + W, :]
+            patches.append(patch)
+
+    patches = np.array(patches)
+
+    # Save patches
+    for patch_idx in range(patches.shape[0]):
+        filename = f'{image_path.name.removesuffix(".tif")}_{patch_idx}.tif'
+        Image.fromarray(patches[patch_idx]).save(save_folder_path / filename)
+    return
+
+
+def patchify_images_in_folder(image_root: Path,  save_folder_path: Path,
+                              H:       int,                                                             
+                              W:       int,                                                             
+                              stride:  int):                                                            
+    save_folder_path.mkdir(parents=True, exist_ok=True)
+    for image_path in image_root.iterdir():
+        slice_image_with_stride(image_path, save_folder_path,
+                            H=H, 
+                            W=W, 
+                            stride=stride)
+    return
 
 def main():
     args = parse_args()
@@ -22,16 +75,28 @@ def main():
     shutil.copy(source, temp)
     print(f"Unpacking Potsdam...")
     shutil.unpack_archive(temp / source.name, temp)
-
     original_potsdam_root = temp / "Potsdam"
     print(f"Unpacking Potsdam images...")
     with zipfile.ZipFile(original_potsdam_root / "2_Ortho_RGB.zip") as z:
         for member in z.namelist():
-            filename = Path(member).name # Strip the top-level folder
-            if filename:  # skip directories
+            filename = Path(member).name # strip the top-level folder
+            if filename.endswith(".tif"):  # read only .tif files
                 (data_root / "images" / filename).write_bytes(z.read(member))
     print(f"Unpacking Potsdam labels...")
     shutil.unpack_archive(original_potsdam_root / "5_Labels_all.zip", data_root / "labels")
     print(f"Potsdam dataset unpacking complete.")
-if __name__ == "__main__":
-    main()
+    if args.skip_patchify: return
+    # patchify
+    patchify_images_in_folder(data_root / "images", temp / "patch_images", 
+                              args.patch_height,
+                              args.patch_width,
+                              args.patch_stride)
+    patchify_images_in_folder(data_root / "labels", temp / "patch_labels", 
+                              args.patch_height,
+                              args.patch_width,
+                              args.patch_stride)
+    shutil.move(temp / "patch_images", data_root / "images")
+    shutil.move(temp / "patch_labels", data_root / "labels")
+
+    if __name__ == "__main__":
+        main()
