@@ -61,7 +61,7 @@ class ISPRSBaseDataset(Dataset):
         for image_path in Path(self.images).iterdir():
             if image_path.name.endswith("tfw"):
                 continue # skip .tfw files
-            label_path = f"{image_path.name[:-7]}label.tif"
+            label_path = Path(self.labels) / f"{image_path.name[:-7]}label.tif"
             image_label_pairs.append((image_path, label_path))
         train_pairs, val_pairs = train_test_split(image_label_pairs, 
                                                   train_size=self.train_size, random_state=self.seed)
