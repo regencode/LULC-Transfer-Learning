@@ -124,9 +124,9 @@ def main():
         T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.05)
     ])
 
-    train_dataset = get_dataset(args.dataset, root=args.data_dir, split="train", 
+    train_dataset = get_dataset(args.dataset, root=args.data_dir, split="train", seed=args.seed, 
                                 pair_transform=PAIR_TRANSFORMS, transform=X_TRAIN_TRANSFORMS)
-    val_dataset = get_dataset(args.dataset, root=args.data_dir, split="val")
+    val_dataset = get_dataset(args.dataset, root=args.data_dir, split="val", seed=args.seed)
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
@@ -180,6 +180,19 @@ def main():
             )
 
     trainer.fit(model, train_loader, val_loader)
+
+    # Save wandb run ID for test script to use
+    if args.use_wandb:
+        run_id = None
+        for logger in loggers:
+            if hasattr(logger, 'experiment') and hasattr(logger.experiment, 'id'):
+                run_id = logger.experiment.id
+                break
+        if run_id:
+            run_id_file = os.path.join(args.output_dir, "wandb_run_id.txt")
+            with open(run_id_file, "w") as f:
+                f.write(run_id)
+            print(f"\nWandb run ID saved to {run_id_file}")
 
 
 if __name__ == "__main__":
