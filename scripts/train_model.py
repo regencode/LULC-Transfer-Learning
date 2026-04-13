@@ -135,6 +135,7 @@ def main():
             backbone_name=args.backbone,
             decoder_name=args.decoder,
             num_classes=6,
+            dataset=args.dataset.lower(),
             pretrained=pretrained,
             learning_rate=args.lr,
             weight_decay=args.weight_decay,
