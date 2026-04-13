@@ -6,6 +6,7 @@ from torch.optim import AdamW, SGD
 from torch.optim.lr_scheduler import LinearLR
 from torchmetrics import Accuracy, Precision, Recall, F1Score, JaccardIndex
 
+from ..datasets.base_dataset import CLASS_WEIGHTS
 from ..models.segmentation_model import SegmentationModel
 
 
@@ -41,7 +42,7 @@ class SegmentationTrainer(pl.LightningModule):
             decoder_kwargs=decoder_kwargs,
         )
 
-        self.criterion = torch.nn.CrossEntropyLoss()
+        self.criterion = torch.nn.CrossEntropyLoss(weight=CLASS_WEIGHTS)
 
         metric_kwargs = dict(task="multiclass", num_classes=num_classes, average="macro")
         self.train_metrics = self._create_metrics(metric_kwargs)
