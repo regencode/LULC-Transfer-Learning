@@ -107,6 +107,7 @@ class ISPRSBaseDataset(Dataset):
         image = torch.from_numpy(np.array(image, dtype=np.float32).transpose(2, 0, 1) / 255.0)
         label = torch.from_numpy(self.rgb_to_class_index(np.array(label, dtype=np.uint8)).transpose(2, 0, 1)).long()
         image, label = self.pair_transform_fn(image, label)
+        label = ein.rearrange(label, "1 h w -> h w")
         if self.transform:
             image = self.transform(image)
         if self.target_transform:
