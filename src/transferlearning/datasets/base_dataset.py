@@ -26,7 +26,7 @@ ISPRS_COLOR_MAP = {
     (255, 0, 0): 5,      # clutter
 }
 
-CLASS_PROPORTIONS = {
+POTSDAM_CLASS_PROPORTIONS = {
     0: 31.35,
     1: 24.81,
     2: 22.07,
@@ -35,11 +35,24 @@ CLASS_PROPORTIONS = {
     5: 4.75,
 }
 
-NUM_CLASSES = len(ISPRS_CLASSES)
+VAIHINGEN_CLASS_PROPORTIONS = {
+    0: 1.0,
+    1: 1.0,
+    2: 1.0,
+    3: 1.0,
+    4: 1.0,
+    5: 1.0,
+}
 
-total_proportion = sum(CLASS_PROPORTIONS.values())
-CLASS_WEIGHTS = torch.tensor([
-    total_proportion / (NUM_CLASSES * CLASS_PROPORTIONS[i])
+
+NUM_CLASSES = len(ISPRS_CLASSES)
+POTSDAM_CLASS_WEIGHTS = torch.tensor([
+    sum(POTSDAM_CLASS_PROPORTIONS) / (NUM_CLASSES * POTSDAM_CLASS_PROPORTIONS[i])
+    for i in range(NUM_CLASSES)
+])
+
+VAIHINGEN_CLASS_WEIGHTS = torch.tensor([
+    sum(POTSDAM_CLASS_PROPORTIONS) / (NUM_CLASSES * POTSDAM_CLASS_PROPORTIONS[i])
     for i in range(NUM_CLASSES)
 ])
 

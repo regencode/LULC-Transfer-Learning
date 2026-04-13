@@ -6,7 +6,7 @@ from torch.optim import AdamW, SGD
 from torch.optim.lr_scheduler import LinearLR
 from torchmetrics import Accuracy, Precision, Recall, F1Score, JaccardIndex
 
-from ..datasets.base_dataset import CLASS_WEIGHTS
+from ..datasets.base_dataset import POTSDAM_CLASS_WEIGHTS, VAIHINGEN_CLASS_WEIGHTS
 from ..models.segmentation_model import SegmentationModel
 
 
@@ -22,6 +22,7 @@ class SegmentationTrainer(pl.LightningModule):
         backbone_name: str,
         decoder_name: str,
         num_classes: int,
+        dataset: str, # "potsdam" or "vaihingen"
         pretrained: bool = True,
         learning_rate: float = 1e-3,
         weight_decay: float = 1e-4,
@@ -42,7 +43,9 @@ class SegmentationTrainer(pl.LightningModule):
             decoder_kwargs=decoder_kwargs,
         )
 
-        self.criterion = torch.nn.CrossEntropyLoss(weight=CLASS_WEIGHTS)
+        self.criterion = torch.nn.CrossEntropyLoss(
+            weight=POTSDAM_CLASS_WEIGHTS if dataset == "potsdam" else VAIHINGEN_CLASS_WEIGHTS
+        )
 
         metric_kwargs = dict(task="multiclass", num_classes=num_classes, average="macro")
         self.train_metrics = self._create_metrics(metric_kwargs)
