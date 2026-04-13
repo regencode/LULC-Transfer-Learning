@@ -102,12 +102,10 @@ class ISPRSBaseDataset(Dataset):
         image = Image.open(self.file_list[idx][0]).convert("RGB")
         label = Image.open(self.file_list[idx][1]).convert("RGB")
         image = torch.from_numpy(np.array(image, dtype=np.float32).transpose(2, 0, 1) / 255.0)
+        label = torch.from_numpy(self.rgb_to_class_index(np.array(label, dtype=np.uint8))).long()
         image, label = self.pair_transform_fn(image, label)
         if self.transform:
             image = self.transform(image)
-        label_np = np.array(label, dtype=np.uint8)
-        label_idx = self.rgb_to_class_index(label_np)
         if self.target_transform:
-            label_idx = self.target_transform(label_idx)
-        label_tensor = torch.from_numpy(label_idx).long()
-        return image, label_tensor
+            label = self.target_transform(label)
+        return image, label 
