@@ -49,6 +49,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Test LULC Segmentation Model")
     parser.add_argument("--config", type=str, default="configs/config.yaml", help="Path to config file")
     parser.add_argument("--checkpoint", type=str, required=True, help="Path to model checkpoint")
+    parser.add_argument("--seed", type=int, required=True, help="Seed for random split")
 
     # WandB options
     parser.add_argument("--wandb_id", type=str, default=None, help="Wandb run ID (auto-detect if not provided)")
@@ -114,6 +115,7 @@ def get_wandb_run_id(checkpoint_path: str) -> Optional[str]:
 
 def log_visualization(model, test_loader, args):
     """Log image | ground_truth | prediction subplot to wandb."""
+    pl.seed_everything(args.seed)
     model.eval()
     
     num_samples = min(args.num_vis_samples, args.batch_size)
