@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 import pytorch_lightning as pl
 from torch.optim import AdamW, SGD
-from torch.optim.lr_scheduler import CosineAnnealingLR, ReduceLROnPlateau
+from torch.optim.lr_scheduler import LinearLR
 from torchmetrics import Accuracy, Precision, Recall, F1Score, JaccardIndex
 
 from ..models.segmentation_model import SegmentationModel
@@ -25,10 +25,9 @@ class SegmentationTrainer(pl.LightningModule):
         learning_rate: float = 1e-3,
         weight_decay: float = 1e-4,
         optimizer: str = "adamw",
-        scheduler: str = "cosine",
         max_epochs: int = 100,
-        backbone_kwargs: Optional[dict] = None,
-        decoder_kwargs: Optional[dict] = None,
+        backbone_kwargs: dict = {},
+        decoder_kwargs: dict = {},
     ):
         super().__init__()
         self.save_hyperparameters()
@@ -96,11 +95,10 @@ class SegmentationTrainer(pl.LightningModule):
         else:
             raise ValueError(f"Unknown optimizer: {self.hparams.optimizer}")
 
-        if self.hparams.scheduler == "cosine":
-            scheduler = CosineAnnealingLR(optimizer, T_max=self.hparams.max_epochs)
-            return [optimizer], [scheduler]
-        elif self.hparams.scheduler == "plateau":
-            scheduler = ReduceLROnPlateau(optimizer, mode="min", patience=5, factor=0.5)
-            return {"optimizer": optimizer, "lr_scheduler": {"scheduler": scheduler, "monitor": "val_loss"}}
-        else:
-            return optimizer
+        scheduler = LinearLR(
+            optimizer,
+            start_factor=1.0,
+            end_factor=0.0,
+            total_iters=self.hparams.max_epochs
+        )
+        return [optimizer], [scheduler]

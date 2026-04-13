@@ -8,12 +8,16 @@ Usage:
 
 import argparse
 import os
+import torch
+import torchvision
 import yaml
 
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger, CSVLogger, WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, LearningRateMonitor
 from torch.utils.data import DataLoader
+import torchvision.transforms as T
+import torchvision.transforms.functional as F
 from typing import Any
 
 from transferlearning.datasets.registry import get_dataset
@@ -37,6 +41,15 @@ def load_config(path):
         return yaml.safe_load(f)
 
 
+class RandomRotationFromList:
+    def __init__(self, degrees):
+        self.degrees = degrees
+
+    def __call__(self, img):
+        angle = self.degrees[torch.randint(len(self.degrees), size=(1,))]
+        return F.rotate(img, angle)
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Train LULC Segmentation Model")
     parser.add_argument("--config", type=str, default="configs/config.yaml", help="Path to config file")
@@ -54,7 +67,6 @@ def parse_args():
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--weight_decay", type=float, default=0.0001)
     parser.add_argument("--optimizer", type=str, default="adamw")
-    parser.add_argument("--scheduler", type=str, default="linear")
     parser.add_argument("--max_epochs", type=int, default=100)
 
     # Logging (script defaults, override inline)
@@ -101,57 +113,67 @@ def main():
 
     pretrained = args.pretrained if isinstance(args.pretrained, bool) else (args.pretrained.lower() == "true" if args.pretrained else True)
 
-    train_dataset = get_dataset(args.dataset, root=args.data_dir, split="train")
+    PAIR_TRANSFORMS = T.Compose([
+        T.RandomVerticalFlip(p=0.5),
+        T.RandomHorizontalFlip(p=0.5),
+        RandomRotationFromList([0, 90, 180, 270])
+        ])
+    X_TRAIN_TRANSFORMS = T.Compose([
+        T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.05)
+    ])
+
+    train_dataset = get_dataset(args.dataset, root=args.data_dir, split="train", 
+                                pair_transform=PAIR_TRANSFORMS, transform=X_TRAIN_TRANSFORMS)
     val_dataset = get_dataset(args.dataset, root=args.data_dir, split="val")
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
 
     model = SegmentationTrainer(
-        backbone_name=args.backbone,
-        decoder_name=args.decoder,
-        num_classes=6,
-        pretrained=pretrained,
-        learning_rate=args.lr,
-        weight_decay=args.weight_decay,
-        optimizer=args.optimizer,
-        scheduler=args.scheduler,
-        max_epochs=args.max_epochs,
-    )
+            backbone_name=args.backbone,
+            decoder_name=args.decoder,
+            num_classes=6,
+            pretrained=pretrained,
+            learning_rate=args.lr,
+            weight_decay=args.weight_decay,
+            optimizer=args.optimizer,
+            max_epochs=args.max_epochs,
+            )
 
     loggers = [
-        TensorBoardLogger(save_dir=args.output_dir, name="tensorboard", version=args.experiment_name),
-        CSVLogger(save_dir=args.output_dir, name="csv_logs", version=args.experiment_name),
-    ]
+            TensorBoardLogger(save_dir=args.output_dir, name="tensorboard", version=args.experiment_name),
+            CSVLogger(save_dir=args.output_dir, name="csv_logs", version=args.experiment_name),
+            ]
 
     if args.use_wandb:
         loggers.append(WandbLogger(
             project="lulc-segmentation",
             name=args.experiment_name,
             save_dir=args.output_dir,
-        ))
+            log_model=True
+            ))
 
     callbacks = [
-        ModelCheckpoint(
-            dirpath=os.path.join(args.output_dir, "checkpoints", args.experiment_name),
-            filename="{epoch}-{val_loss:.4f}-{val_iou:.4f}",
-            monitor="val_iou",
-            mode="max",
-            save_top_k=3,
-            save_last=True,
-        ),
-        EarlyStopping(monitor="val_loss", patience=15, mode="min"),
-        LearningRateMonitor(logging_interval="epoch"),
-    ]
+            ModelCheckpoint(
+                dirpath=os.path.join(args.output_dir, "checkpoints", args.experiment_name),
+                filename="{epoch}-{val_loss:.4f}-{val_iou:.4f}",
+                monitor="val_loss",
+                mode="min",
+                save_top_k=3,
+                save_last=True,
+                ),
+            EarlyStopping(monitor="val_loss", patience=10, mode="min"),
+            LearningRateMonitor(logging_interval="epoch"),
+            ]
 
     trainer = pl.Trainer(
-        max_epochs=args.max_epochs,
-        accelerator="auto",
-        devices=1,
-        logger=loggers,
-        callbacks=callbacks,
-        precision=args.precision,
-    )
+            max_epochs=args.max_epochs,
+            accelerator="auto",
+            devices=1,
+            logger=loggers,
+            callbacks=callbacks,
+            precision=args.precision,
+            )
 
     trainer.fit(model, train_loader, val_loader)
 

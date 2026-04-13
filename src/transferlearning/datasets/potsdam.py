@@ -27,8 +27,9 @@ class PotsdamDataset(ISPRSBaseDataset):
         train_size: float = 0.8,
         test_size: float = 0.5,
         seed: int = 42,
+        pair_transform: Optional[Callable] = None,
         transform: Optional[Callable] = None,
-        target_transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None
     ):
         self.image_folder = Path(root) / "images"
         self.label_folder = Path(root) / "labels"
@@ -37,6 +38,7 @@ class PotsdamDataset(ISPRSBaseDataset):
                          train_size=train_size,
                          test_size=test_size,
                          seed=seed,
+                         pair_transform=pair_transform,
                          transform=transform,
                          target_transform=target_transform
         )
