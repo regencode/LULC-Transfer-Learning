@@ -70,7 +70,7 @@ def parse_args():
     parser.add_argument("--max_epochs", type=int, default=100)
 
     # Logging (script defaults, override inline)
-    parser.add_argument("--experiment_name", type=str, default="default")
+    parser.add_argument("--experiment_name", type=str, default=None)
     parser.add_argument("--output_dir", type=str, default="outputs")
     parser.add_argument("--precision", type=int, default=16)
     parser.add_argument("--seed", type=int, default=42)
@@ -102,7 +102,8 @@ def parse_args():
 
 def main():
     args : Any = parse_args() # silence warnings
-    
+    if args.experiment_name is None:
+        args.experiment_name = f"{args.dataset}-{args.backbone}{args.decoder}-seed{args.seed}-pretrained{'True' if args.pretrained else 'False'}"
     print("\n" + "="*60)
     print("Training Configuration")
     print("="*60)
