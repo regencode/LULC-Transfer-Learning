@@ -72,7 +72,7 @@ def parse_args():
     # Logging (script defaults, override inline)
     parser.add_argument("--experiment_name", type=str, default="")
     parser.add_argument("--output_dir", type=str, default="outputs")
-    parser.add_argument("--precision", type=int, default=16)
+    parser.add_argument("--precision", type=str, default="16-mixed")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--use_wandb", action="store_true", default=True)
     parser.add_argument("--no_progress_bar", action="store_true", default=False)
