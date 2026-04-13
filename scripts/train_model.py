@@ -75,6 +75,7 @@ def parse_args():
     parser.add_argument("--precision", type=int, default=16)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--use_wandb", action="store_true", default=True)
+    parser.add_argument("--no_progress_bar", action="store_true", default=False)
 
     args = parser.parse_args()
 
@@ -173,6 +174,7 @@ def main():
             logger=loggers,
             callbacks=callbacks,
             precision=args.precision,
+            enable_progress_bar= not args.no_progress_bar
             )
 
     trainer.fit(model, train_loader, val_loader)
