@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Optional, Callable
 import numpy as np
 import torch
+import einops as ein
 from torch.utils.data import Dataset
 from PIL import Image
 from sklearn.model_selection import train_test_split
@@ -93,7 +94,9 @@ class ISPRSBaseDataset(Dataset):
         for rgb, idx in ISPRS_COLOR_MAP.items():
             mask = np.all(label_rgb == np.array(rgb, dtype=np.uint8), axis=-1)
             class_index[mask] = idx
+        class_index = ein.rearrange(class_index, "h w -> h w 1")
         return class_index
+
 
     def __len__(self) -> int:
         return len(self.file_list)
@@ -102,7 +105,7 @@ class ISPRSBaseDataset(Dataset):
         image = Image.open(self.file_list[idx][0]).convert("RGB")
         label = Image.open(self.file_list[idx][1]).convert("RGB")
         image = torch.from_numpy(np.array(image, dtype=np.float32).transpose(2, 0, 1) / 255.0)
-        label = torch.from_numpy(self.rgb_to_class_index(np.array(label, dtype=np.uint8))).long()
+        label = torch.from_numpy(self.rgb_to_class_index(np.array(label, dtype=np.uint8)).transpose(2, 0, 1)).long()
         image, label = self.pair_transform_fn(image, label)
         if self.transform:
             image = self.transform(image)
