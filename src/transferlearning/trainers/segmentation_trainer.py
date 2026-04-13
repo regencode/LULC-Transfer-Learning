@@ -43,9 +43,11 @@ class SegmentationTrainer(pl.LightningModule):
             decoder_kwargs=decoder_kwargs,
         )
 
+        self.weight = POTSDAM_CLASS_WEIGHTS if dataset == "potsdam" else VAIHINGEN_CLASS_WEIGHTS 
         self.criterion = torch.nn.CrossEntropyLoss(
-            weight=POTSDAM_CLASS_WEIGHTS if dataset == "potsdam" else VAIHINGEN_CLASS_WEIGHTS
+            weight=self.weight
         )
+        print(f"using loss weighting for dataset {dataset}: {self.weight}")
 
         metric_kwargs = dict(task="multiclass", num_classes=num_classes, average="macro")
         self.train_metrics = self._create_metrics(metric_kwargs)
