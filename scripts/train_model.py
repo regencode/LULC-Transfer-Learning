@@ -62,7 +62,7 @@ def parse_args():
     parser.add_argument("--data_dir", type=str, default=None)
 
     # Hyperparameters (script defaults, override inline)
-    parser.add_argument("--batch_size", type=int, default=8)
+    parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--num_workers", type=int, default=4)
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--weight_decay", type=float, default=0.0001)
