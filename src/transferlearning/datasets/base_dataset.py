@@ -97,7 +97,6 @@ class ISPRSBaseDataset(Dataset):
         class_index = ein.rearrange(class_index, "h w -> h w 1")
         return class_index
 
-
     def __len__(self) -> int:
         return len(self.file_list)
 
@@ -105,9 +104,9 @@ class ISPRSBaseDataset(Dataset):
         image = Image.open(self.file_list[idx][0]).convert("RGB")
         label = Image.open(self.file_list[idx][1]).convert("RGB")
         image = torch.from_numpy(np.array(image, dtype=np.float32).transpose(2, 0, 1) / 255.0)
-        label = torch.from_numpy(self.rgb_to_class_index(np.array(label, dtype=np.uint8)).transpose(2, 0, 1)).long()
+        label = torch.from_numpy(self.rgb_to_class_index(np.array(label, dtype=np.uint8)).transpose(2, 0, 1))
         image, label = self.pair_transform_fn(image, label)
-        label = ein.rearrange(label, "1 h w -> h w")
+        label = ein.rearrange(label, "1 h w -> h w").long()
         if self.transform:
             image = self.transform(image)
         if self.target_transform:
