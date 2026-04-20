@@ -130,6 +130,8 @@ def main():
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
+    test_dataset = get_dataset(args.dataset, root=args.data_dir, split="test", seed=args.seed)
+    test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
 
     model = SegmentationTrainer(
             backbone_name=args.backbone,
@@ -180,6 +182,22 @@ def main():
             )
 
     trainer.fit(model, train_loader, val_loader)
+
+    # Load best checkpoint and evaluate on test set
+    checkpoint_path = os.path.join(args.output_dir, "checkpoints", args.experiment_name, "best.ckpt")
+    print(f"\nLoading best checkpoint from: {checkpoint_path}")
+    test_results = trainer.test(model, test_loader, ckpt_path=checkpoint_path)
+
+    if test_results:
+        print("\nTest Results:")
+        for key, value in test_results[0].items():
+            print(f"  {key}: {value:.4f}")
+
+        # Log test metrics to wandb
+        if args.use_wandb:
+            import wandb
+            for key, value in test_results[0].items():
+                wandb.log({f"test_{key}": value})
 
     # Save wandb run ID for test script to use
     if args.use_wandb:

@@ -202,10 +202,8 @@ def main():
     test_dataset = get_dataset(args.dataset, root=args.data_dir, split="test", seed=args.seed)
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
 
-    model = SegmentationTrainer.load_from_checkpoint(args.checkpoint)
-
     trainer = pl.Trainer(accelerator="auto", devices=1)
-    results = trainer.test(model, test_loader)
+    results = trainer.test(ckpt_path="best")
 
     if results:
         print("\nTest Results:")
