@@ -184,9 +184,8 @@ def main():
     trainer.fit(model, train_loader, val_loader)
 
     # Load best checkpoint and evaluate on test set
-    checkpoint_path = os.path.join(args.output_dir, "checkpoints", args.experiment_name, "best.ckpt")
-    print(f"\nLoading best checkpoint from: {checkpoint_path}")
-    test_results = trainer.test(model, test_loader, ckpt_path=checkpoint_path)
+    print(f"\nLoading best checkpoint...")
+    test_results = trainer.test(model, test_loader, ckpt_path="best")
 
     if test_results:
         print("\nTest Results:")
