@@ -102,7 +102,7 @@ def parse_args():
 
 def main():
     args : Any = parse_args() # Any type to silence warnings
-    if not args.experiment_name:
+    if args.experiment_name == "":
         args.experiment_name = f"{args.dataset}-{args.backbone}{args.decoder}-seed{args.seed}-pretrained{'True' if args.pretrained else 'False'}"
     print("\n" + "="*60)
     print("Training Configuration")
@@ -126,11 +126,12 @@ def main():
 
     train_dataset = get_dataset(args.dataset, root=args.data_dir, split="train", seed=args.seed, 
                                 pair_transform=PAIR_TRANSFORMS, transform=X_TRAIN_TRANSFORMS)
+
     val_dataset = get_dataset(args.dataset, root=args.data_dir, split="val", seed=args.seed)
+    test_dataset = get_dataset(args.dataset, root=args.data_dir, split="test", seed=args.seed)
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
-    test_dataset = get_dataset(args.dataset, root=args.data_dir, split="test", seed=args.seed)
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
 
     model = SegmentationTrainer(
