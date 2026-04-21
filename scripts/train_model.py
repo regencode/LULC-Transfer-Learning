@@ -103,7 +103,7 @@ def parse_args():
 def main():
     args : Any = parse_args() # Any type to silence warnings
     if args.experiment_name == "":
-        args.experiment_name = f"{args.dataset}-{args.backbone}{args.decoder}-seed{args.seed}-pretrained{'True' if args.pretrained else 'False'}"
+        args.experiment_name = f"{args.dataset}-{args.backbone}{args.decoder}-seed{args.seed}-pretrained{'True' if args.pretrained == 'true' else 'False'}"
     print("\n" + "="*60)
     print("Training Configuration")
     print("="*60)
