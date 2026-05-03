@@ -72,11 +72,10 @@ class SwinTransformerBackbone(nn.Module):
             if feat.dim() == 3:
                 B, HW, C = feat.shape
                 H = W = int(HW ** 0.5)
-                feat = ein.rearrange("b hw c -> b c h w", feat, h=H, w=W)
+                feat = ein.rearrange(feat, "b hw c -> b c h w", h=H, w=W)
             elif feat.dim() == 4:
                 B, H, W, C = feat.shape
-                feat = ein.rearrange("b h w c -> b c w h", feat)
-
+                feat = ein.rearrange(feat, "b h w c -> b c w h")
             out[key] = feat
         
         return out
