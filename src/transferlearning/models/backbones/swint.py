@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 from torchvision.models import swin_t, swin_s, swin_b, Swin_T_Weights, Swin_S_Weights, Swin_B_Weights
 from torchvision.models.feature_extraction import create_feature_extractor
+import einops as ein
 
 from .registry import register_backbone
 
@@ -71,8 +72,13 @@ class SwinTransformerBackbone(nn.Module):
             if feat.dim() == 3:
                 B, HW, C = feat.shape
                 H = W = int(HW ** 0.5)
-                feat = feat.transpose(1, 2).reshape(B, C, H, W)
+                feat = ein.rearrange("b hw c -> b c h w", feat, h=H, w=W)
+            elif feat.dim() == 4:
+                B, H, W, C = feat.shape
+                feat = ein.rearrange("b h w c -> b c w h", feat)
+
             out[key] = feat
+        
         return out
 
     def get_stage_channels(self) -> List[int]:

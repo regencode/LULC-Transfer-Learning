@@ -50,3 +50,4 @@ def resnet50_backbone(pretrained: bool = True) -> ResNetBackbone:
 @register_backbone("resnet101")
 def resnet101_backbone(pretrained: bool = True) -> ResNetBackbone:
     return ResNetBackbone(variant="resnet101", pretrained=pretrained)
+
