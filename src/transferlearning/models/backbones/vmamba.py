@@ -2195,7 +2195,8 @@ def vanilla_vmamba_tiny(pretrained=False, **kwargs):
 @register_backbone("vmamba_tiny")
 def vmamba_tiny_backbone(pretrained=False, **kwargs):
     model = vanilla_vmamba_tiny(pretrained, **kwargs)
-    model.
+    del model.classifier
+    return model
 
 
 
