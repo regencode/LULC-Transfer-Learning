@@ -8,12 +8,10 @@
 # distribution of this software and related documentation without an express
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
 
-
-import argparse
+from ..registry import register_backbone
 import torch
 import torch.nn as nn
 from timm.models.registry import register_model
-from ..registry import register_backbone
 import math
 from timm.models.layers import trunc_normal_, DropPath, LayerNorm2d
 from timm.models._builder import resolve_pretrained_cfg
@@ -23,6 +21,7 @@ except:
     from timm.models._builder import _update_default_model_kwargs as update_args
 from timm.models.vision_transformer import Mlp, PatchEmbed
 from timm.models.layers import DropPath, trunc_normal_
+from timm.models.registry import register_model
 import torch.nn.functional as F
 from mamba_ssm.ops.selective_scan_interface import selective_scan_fn
 from einops import rearrange, repeat
@@ -32,14 +31,14 @@ from pathlib import Path
 
 def _cfg(url='', **kwargs):
     return {'url': url,
-            'num_classes': 2,
-            'input_size': (3, 256, 256),
+            'num_classes': 1000,
+            'input_size': (3, 224, 224),
             'pool_size': None,
             'crop_pct': 0.875,
             'interpolation': 'bicubic',
             'fixed_input_size': True,
-            #'mean': (0.485, 0.456, 0.406),
-            #'std': (0.229, 0.224, 0.225),
+            'mean': (0.485, 0.456, 0.406),
+            'std': (0.229, 0.224, 0.225),
             **kwargs
             }
 
@@ -205,8 +204,7 @@ def _load_checkpoint(model,
     Returns:
         dict or OrderedDict: The loaded checkpoint.
     """
-    with torch.serialization.safe_globals([argparse.Namespace]):
-        checkpoint = torch.load(filename, map_location=map_location)
+    checkpoint = torch.load(filename, map_location=map_location)
     if not isinstance(checkpoint, dict):
         raise RuntimeError(
             f'No state_dict found in checkpoint file {filename}')
@@ -248,7 +246,7 @@ class Downsample(nn.Module):
         else:
             dim_out = 2 * dim
         self.reduction = nn.Sequential(
-            nn.Conv2d(dim, dim_out, kernel_size=3, stride=2, padding=1, bias=False)
+            nn.Conv2d(dim, dim_out, 3, 2, 1, bias=False),
         )
 
     def forward(self, x):
@@ -261,7 +259,7 @@ class PatchEmbed(nn.Module):
     Patch embedding block"
     """
 
-    def __init__(self, in_chans=3, out_chans=32, in_dim=64, downsample=True):
+    def __init__(self, in_chans=3, in_dim=64, dim=96):
         """
         Args:
             in_chans: number of input channels.
@@ -270,29 +268,18 @@ class PatchEmbed(nn.Module):
         # in_dim = 1
         super().__init__()
         self.proj = nn.Identity()
-        if downsample:
-            self.conv_down = nn.Sequential(
-                nn.Conv2d(in_chans, in_dim, 3, 2, 1, bias=False), # kernel stride padding
-                LayerNorm2d(in_dim, eps=1e-4),
-                nn.ReLU(),
-                nn.Conv2d(in_dim, out_chans, 3, 2, 1, bias=False),
-                LayerNorm2d(out_chans, eps=1e-4),
-                nn.ReLU(),
-                )
-        else:
-            print("not downsampling feature map in PatchEmbed")
-            self.conv_down = nn.Sequential(
-                nn.Conv2d(in_chans, in_dim, 3, 1, 1, bias=False, padding_mode="reflect"),
-                LayerNorm2d(in_dim, eps=1e-4),
-                nn.ReLU(),
-                nn.Conv2d(in_dim, out_chans, 3, 1, 1, bias=False, padding_mode="reflect"),
-                LayerNorm2d(out_chans, eps=1e-4),
-                )
+        self.conv_down = nn.Sequential(
+            nn.Conv2d(in_chans, in_dim, 3, 2, 1, bias=False),
+            nn.BatchNorm2d(in_dim, eps=1e-4),
+            nn.ReLU(),
+            nn.Conv2d(in_dim, dim, 3, 2, 1, bias=False),
+            nn.BatchNorm2d(dim, eps=1e-4),
+            nn.ReLU()
+            )
 
     def forward(self, x):
         x = self.proj(x)
         x = self.conv_down(x)
-        _, _, H, W = x.shape
         return x
 
 
@@ -306,7 +293,7 @@ class ConvBlock(nn.Module):
 
         self.conv1 = nn.Conv2d(dim, dim, kernel_size=kernel_size, stride=1, padding=1)
         self.norm1 = nn.BatchNorm2d(dim, eps=1e-5)
-        self.act1 =  nn.GELU(approximate= 'tanh')
+        self.act1 = nn.GELU(approximate= 'tanh')
         self.conv2 = nn.Conv2d(dim, dim, kernel_size=kernel_size, stride=1, padding=1)
         self.norm2 = nn.BatchNorm2d(dim, eps=1e-5)
         self.layer_scale = layer_scale
@@ -345,14 +332,11 @@ class MambaVisionMixer(nn.Module):
         dt_init_floor=1e-4,
         conv_bias=True,
         bias=False,
-        use_linear=True,
         use_fast_path=True, 
         layer_idx=None,
         device=None,
         dtype=None,
     ):
-
-        self.use_linear = use_linear
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
         self.d_model = d_model
@@ -422,8 +406,6 @@ class MambaVisionMixer(nn.Module):
         x, z = xz.chunk(2, dim=1)
         A = -torch.exp(self.A_log.float())
         x = F.silu(F.conv1d(input=x, weight=self.conv1d_x.weight, bias=self.conv1d_x.bias, padding='same', groups=self.d_inner//2))
-
-        # z is output of non-SSM path
         z = F.silu(F.conv1d(input=z, weight=self.conv1d_z.weight, bias=self.conv1d_z.bias, padding='same', groups=self.d_inner//2))
         x_dbl = self.x_proj(rearrange(x, "b d l -> (b l) d"))
         dt, B, C = torch.split(x_dbl, [self.dt_rank, self.d_state, self.d_state], dim=-1)
@@ -441,13 +423,10 @@ class MambaVisionMixer(nn.Module):
                               delta_softplus=True, 
                               return_last_state=None)
         
-        if self.use_linear:
-            y = torch.cat([y, z], dim=1)
-            y = rearrange(y, "b d l -> b l d")
-            out = self.out_proj(y) 
-            return out
-        else:
-            return rearrange(y * z, "b d l -> b l d")
+        y = torch.cat([y, z], dim=1)
+        y = rearrange(y, "b d l -> b l d")
+        out = self.out_proj(y)
+        return out
     
 
 class Attention(nn.Module):
@@ -650,56 +629,46 @@ class MambaVision(nn.Module):
     """
 
     def __init__(self,
-                 in_chans,
-                 dims,
+                 dim,
+                 in_dim,
                  depths,
                  window_size,
                  mlp_ratio,
                  num_heads,
                  drop_path_rate=0.2,
+                 in_chans=3,
                  qkv_bias=True,
                  qk_scale=None,
-                 drop_rate=0.1,
-                 attn_drop_rate=0.1,
+                 drop_rate=0.,
+                 attn_drop_rate=0.,
                  layer_scale=None,
                  layer_scale_conv=None,
-                 patch_embed_dim=256,
-                 patchembed_downsample=True,
                  **kwargs):
-        self.dims = dims
-        self.depths = depths
         """
         Args:
-            in_chans: number of channels in input.
-            dims: feature size dimension at each depth.
+            dim: feature size dimension.
             depths: number of layers in each stage.
             window_size: window size in each stage.
             mlp_ratio: MLP ratio.
-            num_heads: number of heads in each stage (transformer MHSA).
+            num_heads: number of heads in each stage.
             drop_path_rate: drop path rate.
+            in_chans: number of input channels.
+            num_classes: number of classes.
             qkv_bias: bool argument for query, key, value learnable bias.
             qk_scale: bool argument to scaling query, key.
-            drop_rate: dropout rate.
             attn_drop_rate: attention dropout rate.
             norm_layer: normalization layer.
             layer_scale: layer scaling coefficient.
             layer_scale_conv: conv layer scaling coefficient.
         """
         super().__init__()
-        print("drop_rate", drop_rate)
-        print("attn_drop_rate", attn_drop_rate)
-        print("drop_path_rate", drop_path_rate)
-
-        assert len(dims) == len(depths), f"dims[] len does not match depths[] len"
-        print(f"PatchEmbed Downsample: {patchembed_downsample}")
-        self.patch_embed = PatchEmbed(in_chans=in_chans, out_chans=dims[0], in_dim=patch_embed_dim, downsample=patchembed_downsample)
+        num_features = int(dim * 2 ** (len(depths) - 1))
+        self.patch_embed = PatchEmbed(in_chans=in_chans, in_dim=in_dim, dim=dim)
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]
         self.levels = nn.ModuleList()
-        self.norms = nn.ModuleList()
-        self.downsamples = nn.ModuleList()
         for i in range(len(depths)):
             conv = True if (i == 0 or i == 1) else False
-            level = MambaVisionLayer(dim=dims[i],
+            level = MambaVisionLayer(dim=int(dim * 2 ** i),
                                      depth=depths[i],
                                      num_heads=num_heads[i],
                                      window_size=window_size[i],
@@ -710,18 +679,17 @@ class MambaVision(nn.Module):
                                      drop=drop_rate,
                                      attn_drop=attn_drop_rate,
                                      drop_path=dpr[sum(depths[:i]):sum(depths[:i + 1])],
-                                     downsample=False,
+                                     downsample=(i < 3),
                                      layer_scale=layer_scale,
                                      layer_scale_conv=layer_scale_conv,
                                      transformer_blocks=list(range(depths[i]//2+1, depths[i])) if depths[i]%2!=0 else list(range(depths[i]//2, depths[i])),
                                      )
             self.levels.append(level)
-            downsample = Downsample(dim=dims[i])
-            self.downsamples.append(downsample)
-            norm = LayerNorm2d(dims[i])
-            self.norms.append(norm)
+        self.norm = nn.BatchNorm2d(num_features)
+        self.avgpool = nn.AdaptiveAvgPool2d(1)
+
+        self.head = nn.Identity()
         self.apply(self._init_weights)
-        num_features = int(dims[-1])
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
@@ -746,9 +714,8 @@ class MambaVision(nn.Module):
         x = self.patch_embed(x)
         features: dict[str, torch.Tensor] = {}
         for i, level in enumerate(self.levels):
-            x = self.norms[i](level(x))
+            x = level(x)
             features[f"stage{i+1}"] = x
-            if (i < 3): x = self.downsamples[i](x)
         return features
 
     def forward(self, x):
@@ -766,11 +733,9 @@ class MambaVision(nn.Module):
         return self.dims
 
 
-
 @register_pip_model
 @register_model
 @register_backbone("mambavision_t")
-#modified
 def mamba_vision_T(pretrained=False, **kwargs):
     model_path = kwargs.pop("model_path", "/tmp/mamba_vision_T.pth.tar")
     dims = kwargs.pop("dims", [80, 160, 320, 640])
