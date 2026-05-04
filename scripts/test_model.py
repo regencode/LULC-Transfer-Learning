@@ -32,8 +32,11 @@ import transferlearning.models.backbones.resnet       # noqa: F401
 import transferlearning.models.backbones.efficientnet  # noqa: F401
 import transferlearning.models.backbones.vit           # noqa: F401
 import transferlearning.models.backbones.swint         # noqa: F401
-import transferlearning.models.backbones.vmamba        # noqa: F401
-import transferlearning.models.backbones.MambaVisionModels.mamba_vision   # noqa: F401
+try:
+    import transferlearning.models.backbones.vmamba        # noqa: F401
+    import transferlearning.models.backbones.MambaVisionModels.mamba_vision   # noqa: F401
+except ModuleNotFoundError:
+    print("mamba-ssm not available, cannot use mamba models")
 import transferlearning.models.decoders.unet           # noqa: F401
 import transferlearning.models.decoders.deeplabv3      # noqa: F401
 import transferlearning.datasets.potsdam               # noqa: F401
