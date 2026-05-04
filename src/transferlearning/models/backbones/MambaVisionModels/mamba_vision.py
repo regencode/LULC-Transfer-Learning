@@ -762,6 +762,10 @@ class MambaVision(nn.Module):
                          pretrained, 
                          strict=strict)
 
+    def get_stage_channels(self):
+        return self.dims
+
+
 
 @register_pip_model
 @register_model
