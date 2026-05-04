@@ -762,7 +762,7 @@ class MambaVision(nn.Module):
                          pretrained, 
                          strict=strict)
 
-    def get_stage_channels(self):
+    def get_stage_channels(self) -> list[int]:
         return self.dims
 
 
