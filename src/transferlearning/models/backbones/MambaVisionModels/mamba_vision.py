@@ -629,12 +629,12 @@ class MambaVision(nn.Module):
     """
 
     def __init__(self,
-                 dim,
-                 in_dim,
+                 dims,
                  depths,
                  window_size,
                  mlp_ratio,
                  num_heads,
+                 in_dim,
                  drop_path_rate=0.2,
                  in_chans=3,
                  qkv_bias=True,
@@ -662,13 +662,12 @@ class MambaVision(nn.Module):
             layer_scale_conv: conv layer scaling coefficient.
         """
         super().__init__()
-        num_features = int(dim * 2 ** (len(depths) - 1))
-        self.patch_embed = PatchEmbed(in_chans=in_chans, in_dim=in_dim, dim=dim)
+        self.patch_embed = PatchEmbed(in_chans=in_chans, in_dim=in_dim, dim=dims[0])
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]
         self.levels = nn.ModuleList()
         for i in range(len(depths)):
             conv = True if (i == 0 or i == 1) else False
-            level = MambaVisionLayer(dim=int(dim * 2 ** i),
+            level = MambaVisionLayer(dim=dims[i],
                                      depth=depths[i],
                                      num_heads=num_heads[i],
                                      window_size=window_size[i],
@@ -685,6 +684,7 @@ class MambaVision(nn.Module):
                                      transformer_blocks=list(range(depths[i]//2+1, depths[i])) if depths[i]%2!=0 else list(range(depths[i]//2, depths[i])),
                                      )
             self.levels.append(level)
+        num_features=3
         self.norm = nn.BatchNorm2d(num_features)
         self.avgpool = nn.AdaptiveAvgPool2d(1)
 
