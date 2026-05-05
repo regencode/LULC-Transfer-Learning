@@ -717,17 +717,15 @@ class MambaVision(nn.Module):
 
     def forward_features(self, x):
         x = self.patch_embed(x)
-        for level in self.levels:
+        features: dict[str, torch.Tensor] = {}
+        for i, level in enumerate(self.levels):
             x = level(x)
-        x = self.norm(x)
-        x = self.avgpool(x)
-        x = torch.flatten(x, 1)
-        return x
+            features[f"stage{i+1}"] = x
+        return features
 
     def forward(self, x):
-        x = self.forward_features(x)
-        x = self.head(x)
-        return x
+        xs = self.forward_features(x)
+        return xs
 
     def _load_state_dict(self, 
                          pretrained, 
@@ -735,6 +733,7 @@ class MambaVision(nn.Module):
         _load_checkpoint(self, 
                          pretrained, 
                          strict=strict)
+
     def get_stage_channels(self) -> list[int]:
         return [int(self.dim * 2 ** i) for i in range(len(self.depths))]
 
