@@ -634,7 +634,7 @@ class MambaVision(nn.Module):
                  window_size,
                  mlp_ratio,
                  num_heads,
-                 in_dim,
+                 in_dim=64,
                  drop_path_rate=0.2,
                  in_chans=3,
                  qkv_bias=True,
@@ -741,6 +741,7 @@ def mamba_vision_T(pretrained=False, **kwargs):
     dims = kwargs.pop("dims", [80, 160, 320, 640])
     depths = kwargs.pop("depths", [1, 3, 8, 4])
     num_heads = kwargs.pop("num_heads", [2, 4, 8, 16])
+    in_dim = kwargs.pop("in_dim", 32)
     window_size = kwargs.pop("window_size", [8, 8, 14, 7])
     mlp_ratio = kwargs.pop("mlp_ratio", 4)
     resolution = kwargs.pop("resolution", 256)
@@ -748,6 +749,7 @@ def mamba_vision_T(pretrained=False, **kwargs):
     pretrained_cfg = resolve_pretrained_cfg('mamba_vision_T').to_dict()
     update_args(pretrained_cfg, kwargs, kwargs_filter=None)
     model = MambaVision(dims=dims,
+                        in_dim=in_dim,
                         depths=depths,
                         num_heads=num_heads,
                         window_size=window_size,
