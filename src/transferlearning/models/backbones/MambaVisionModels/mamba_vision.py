@@ -662,6 +662,7 @@ class MambaVision(nn.Module):
             layer_scale_conv: conv layer scaling coefficient.
         """
         super().__init__()
+        self.dims = dims
         self.patch_embed = PatchEmbed(in_chans=in_chans, in_dim=in_dim, dim=dims[0])
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]
         self.levels = nn.ModuleList()
