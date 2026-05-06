@@ -206,7 +206,7 @@ def _load_checkpoint(model,
         dict or OrderedDict: The loaded checkpoint.
     """
     with torch.serialization.safe_globals([argparse.Namespace]):
-        checkpoint = torch.load(filename, map_location=map_location)
+        checkpoint = torch.load(filename, map_location=map_location, weights_only=False)
     if not isinstance(checkpoint, dict):
         raise RuntimeError(
             f'No state_dict found in checkpoint file {filename}')
