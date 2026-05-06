@@ -735,8 +735,9 @@ class MambaVision(nn.Module):
                          strict=strict)
 
     def get_stage_channels(self) -> list[int]:
-        return [int(self.dim * 2 ** i) for i in range(len(self.depths))]
-
+        stage_channels = [int(self.dim * 2 ** i) for i in range(len(self.depths))]
+        print("stage channels for mambavision:", stage_channels)
+        return stage_channels
 
 
 @register_pip_model
