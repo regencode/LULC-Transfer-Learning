@@ -620,8 +620,8 @@ class MambaVisionLayer(nn.Module):
             if pad_r > 0 or pad_b > 0:
                 x = x[:, :, :H, :W].contiguous()
         if self.downsample is None:
-            return x
-        return self.downsample(x)
+            return x, None
+        return x, self.downsample(x)
 
 
 class MambaVision(nn.Module):
@@ -716,10 +716,10 @@ class MambaVision(nn.Module):
         return {'rpb'}
 
     def forward_features(self, x):
-        x = self.patch_embed(x)
+        downsampled = self.patch_embed(x)
         features: dict[str, torch.Tensor] = {}
         for i, level in enumerate(self.levels):
-            x = level(x)
+            x, downsampled = level(downsampled)
             features[f"stage{i+1}"] = x
         return features
 
