@@ -180,6 +180,8 @@ def main():
     trainer = pl.Trainer(
             max_epochs=args.max_epochs,
             accelerator="auto",
+            gradient_clip_val=1.0,
+            gradient_clip_algorithm="norm",
             devices=1,
             logger=loggers,
             callbacks=callbacks,

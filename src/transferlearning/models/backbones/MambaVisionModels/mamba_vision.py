@@ -205,7 +205,7 @@ def _load_checkpoint(model,
     Returns:
         dict or OrderedDict: The loaded checkpoint.
     """
-    checkpoint = torch.load(filename, map_location=map_location)
+    checkpoint = torch.load(filename, map_location=map_location, weights_only=False)
     if not isinstance(checkpoint, dict):
         raise RuntimeError(
             f'No state_dict found in checkpoint file {filename}')
@@ -620,8 +620,8 @@ class MambaVisionLayer(nn.Module):
             if pad_r > 0 or pad_b > 0:
                 x = x[:, :, :H, :W].contiguous()
         if self.downsample is None:
-            return x
-        return self.downsample(x)
+            return x, None
+        return x, self.downsample(x)
 
 
 class MambaVision(nn.Module):
@@ -716,10 +716,10 @@ class MambaVision(nn.Module):
         return {'rpb'}
 
     def forward_features(self, x):
-        x = self.patch_embed(x)
+        downsampled = self.patch_embed(x)
         features: dict[str, torch.Tensor] = {}
         for i, level in enumerate(self.levels):
-            x = level(x)
+            x, downsampled = level(downsampled)
             features[f"stage{i+1}"] = x
         return features
 
@@ -735,8 +735,9 @@ class MambaVision(nn.Module):
                          strict=strict)
 
     def get_stage_channels(self) -> list[int]:
-        return [int(self.dim * 2 ** i) for i in range(len(self.depths))]
-
+        stage_channels = [int(self.dim * 2 ** i) for i in range(len(self.depths))]
+        print("stage channels for mambavision:", stage_channels)
+        return stage_channels
 
 
 @register_pip_model
