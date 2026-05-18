@@ -868,7 +868,7 @@ def mamba_vision_S(pretrained=False, **kwargs):
 
 @register_pip_model
 @register_model
-@register_backbone("mambavision_B")
+@register_backbone("mambavision_b")
 def mamba_vision_B(pretrained=False, **kwargs):
     model_path = kwargs.pop("model_path", "/tmp/mamba_vision_B.pth.tar")
     depths = kwargs.pop("depths", [3, 3, 10, 5])
@@ -938,7 +938,7 @@ def mamba_vision_B_21k(pretrained=False, **kwargs):
 
 @register_pip_model
 @register_model
-@register_backbone("mambavision_L")
+@register_backbone("mambavision_l")
 def mamba_vision_L(pretrained=False, **kwargs):
     model_path = kwargs.pop("model_path", "/tmp/mamba_vision_L.pth.tar")
     depths = kwargs.pop("depths", [3, 3, 10, 5])
