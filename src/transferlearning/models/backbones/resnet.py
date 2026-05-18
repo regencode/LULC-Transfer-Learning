@@ -1,7 +1,7 @@
 from typing import List, Dict
 import torch
 import torch.nn as nn
-from torchvision.models import resnet50, resnet101, ResNet50_Weights, ResNet101_Weights
+from torchvision.models import resnet50, resnet101, resnet152, ResNet50_Weights, ResNet101_Weights, ResNet152_Weights
 from torchvision.models.feature_extraction import create_feature_extractor
 
 from .registry import register_backbone
@@ -10,6 +10,7 @@ from .registry import register_backbone
 RESNET_CONFIGS = {
     "resnet50": {"model_fn": resnet50, "weights": ResNet50_Weights.DEFAULT},
     "resnet101": {"model_fn": resnet101, "weights": ResNet101_Weights.DEFAULT},
+    "resnet152": {"model_fn": resnet152, "weights": ResNet152_Weights.DEFAULT},
 }
 
 RETURN_NODES = {
@@ -50,4 +51,8 @@ def resnet50_backbone(pretrained: bool = True) -> ResNetBackbone:
 @register_backbone("resnet101")
 def resnet101_backbone(pretrained: bool = True) -> ResNetBackbone:
     return ResNetBackbone(variant="resnet101", pretrained=pretrained)
+
+@register_backbone("resnet152")
+def resnet152_backbone(pretrained: bool = True) -> ResNetBackbone:
+    return ResNetBackbone(variant="resnet152", pretrained=pretrained)
 
