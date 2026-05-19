@@ -6,6 +6,7 @@ import einops as ein
 from torch.utils.data import Dataset
 from PIL import Image
 from sklearn.model_selection import train_test_split
+import torchvision.transforms as T
 
 
 ISPRS_CLASSES = [
@@ -50,12 +51,13 @@ POTSDAM_CLASS_WEIGHTS = torch.tensor([
     sum(POTSDAM_CLASS_PROPORTIONS) / (NUM_CLASSES * POTSDAM_CLASS_PROPORTIONS[i])
     for i in range(NUM_CLASSES)
 ])
+POTSDAM_CLASS_WEIGHTS = POTSDAM_CLASS_WEIGHTS / sum(POTSDAM_CLASS_WEIGHTS)
 
 VAIHINGEN_CLASS_WEIGHTS = torch.tensor([
     sum(POTSDAM_CLASS_PROPORTIONS) / (NUM_CLASSES * POTSDAM_CLASS_PROPORTIONS[i])
     for i in range(NUM_CLASSES)
 ])
-
+VAIHINGEN_CLASS_WEIGHTS = VAIHINGEN_CLASS_WEIGHTS / sum(VAIHINGEN_CLASS_WEIGHTS)
 
 class ISPRSBaseDataset(Dataset):
     """Base dataset for ISPRS Potsdam and Vaihingen semantic segmentation.
@@ -132,6 +134,7 @@ class ISPRSBaseDataset(Dataset):
         image = Image.open(self.file_list[idx][0]).convert("RGB")
         label = Image.open(self.file_list[idx][1]).convert("RGB")
         image = torch.from_numpy(np.array(image, dtype=np.float32).transpose(2, 0, 1) / 255.0)
+        image = T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])(image)
         label = torch.from_numpy(self.rgb_to_class_index(np.array(label, dtype=np.uint8)).transpose(2, 0, 1))
         image, label = self.pair_transform_fn(image, label)
         label = ein.rearrange(label, "1 h w -> h w").long()

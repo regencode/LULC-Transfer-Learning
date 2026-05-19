@@ -75,6 +75,11 @@ class SegmentationTrainer(pl.LightningModule):
             logits = F.interpolate(logits, size=masks.shape[1:], mode="bilinear", align_corners=False)
 
         loss = self.criterion(logits, masks)
+
+        if torch.isnan(loss) or torch.isinf(loss):
+            print(f"[{prefix}] NaN/Inf loss detected, skipping batch")
+            return torch.tensor(1.0, device=loss.device, requires_grad=True)
+
         preds = logits.argmax(dim=1)
 
         for name, metric in metrics.items():
