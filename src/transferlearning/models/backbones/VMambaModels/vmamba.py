@@ -1495,15 +1495,6 @@ class VSSM(nn.Module):
             downsample=downsample,
         ))
 
-    def forward(self, x: torch.Tensor):
-        x = self.patch_embed(x)
-        if self.pos_embed is not None:
-            pos_embed = self.pos_embed.permute(0, 2, 3, 1) if not self.channel_first else self.pos_embed
-            x = x + pos_embed
-        for layer in self.layers:
-            x = layer(x)
-        x = self.classifier(x)
-        return x
 
     def flops(self, shape=(3, 224, 224), verbose=True):
         # shape = self.__input_shape__[1:]
@@ -1575,7 +1566,7 @@ class VSSM(nn.Module):
 
 # compatible with openmmlab
 class Backbone_VSSM(VSSM):
-    def __init__(self, pretrained=True, norm_layer="ln", **kwargs):
+    def __init__(self, pretrained=None, norm_layer="ln", **kwargs):
         out_indices=(0, 1, 2, 3)
         kwargs.update(norm_layer=norm_layer)
         super().__init__(**kwargs)
@@ -1599,7 +1590,6 @@ class Backbone_VSSM(VSSM):
     def load_pretrained(self, ckpt=None, key="model"):
         if ckpt is None:
             return
-        
         try:
             _ckpt = torch.load(open(ckpt, "rb"), map_location=torch.device("cpu"))
             print(f"Successfully load ckpt {ckpt}")
@@ -1631,8 +1621,7 @@ class Backbone_VSSM(VSSM):
 
 
 # =====================================================
-@register_backbone("vmamba_tiny")
-def vanilla_vmamba_tiny(pretrained: bool = True):
+def vanilla_vmamba_tiny(pretrained):
     return Backbone_VSSM(pretrained=pretrained,
         depths=[2, 2, 9, 2], dims=96, drop_path_rate=0.2, 
         patch_size=4, in_chans=3, num_classes=1000, 
@@ -1646,7 +1635,6 @@ def vanilla_vmamba_tiny(pretrained: bool = True):
     )
 
 
-@register_backbone("vmamba_small")
 def vanilla_vmamba_small(pretrained: bool = True):
     return Backbone_VSSM(pretrained=pretrained,
         depths=[2, 2, 27, 2], dims=96, drop_path_rate=0.3, 
@@ -1661,7 +1649,6 @@ def vanilla_vmamba_small(pretrained: bool = True):
     )
 
 
-@register_backbone("vmamba_base")
 def vanilla_vmamba_base(pretrained: bool = True):
     return Backbone_VSSM(pretrained=pretrained,
         depths=[2, 2, 27, 2], dims=128, drop_path_rate=0.6, 
@@ -1691,8 +1678,8 @@ def vmamba_tiny_s2l5(channel_first=True):
     )
 
 
-def vmamba_small_s2l15(channel_first=True):
-    return VSSM(
+def vmamba_small_s2l15(pretrained: str = "", channel_first=True):
+    return Backbone_VSSM(pretrained=pretrained,
         depths=[2, 2, 15, 2], dims=96, drop_path_rate=0.3, 
         patch_size=4, in_chans=3, num_classes=1000, 
         ssm_d_state=1, ssm_ratio=2.0, ssm_dt_rank="auto", ssm_act_layer="silu",
@@ -1705,8 +1692,8 @@ def vmamba_small_s2l15(channel_first=True):
     )
 
 
-def vmamba_base_s2l15(channel_first=True):
-    return VSSM(
+def vmamba_base_s2l15(pretrained: str = "", channel_first=True):
+    return Backbone_VSSM(pretrained=pretrained,
         depths=[2, 2, 15, 2], dims=128, drop_path_rate=0.6, 
         patch_size=4, in_chans=3, num_classes=1000, 
         ssm_d_state=1, ssm_ratio=2.0, ssm_dt_rank="auto", ssm_act_layer="silu",
@@ -1720,8 +1707,8 @@ def vmamba_base_s2l15(channel_first=True):
 
 
 # =====================================================
-def vmamba_tiny_s1l8(channel_first=True):
-    return VSSM(
+def vmamba_tiny_s1l8(pretrained: str = "", channel_first=True):
+    return Backbone_VSSM(pretrained=pretrained,
         depths=[2, 2, 8, 2], dims=96, drop_path_rate=0.2, 
         patch_size=4, in_chans=3, num_classes=1000, 
         ssm_d_state=1, ssm_ratio=1.0, ssm_dt_rank="auto", ssm_act_layer="silu",
