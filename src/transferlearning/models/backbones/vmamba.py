@@ -14,7 +14,7 @@ import torch.nn as nn
 from .registry import register_backbone
 
 try:
-    from classification.models.vmamba import VSSM
+    from .VMambaModels.vmamba import Backbone_VSSM
     VMAMBA_AVAILABLE = True
 except ImportError:
     VMAMBA_AVAILABLE = False
@@ -59,7 +59,7 @@ class VMambaBackbone(nn.Module):
         config = VMAMBA_CONFIGS[variant]
         self._stage_channels = config["stage_channels"]
 
-        self.model = VSSM(
+        self.model = Backbone_VSSM(
             depths=config["depths"],
             dims=config["dims"],
             num_classes=0,
@@ -102,16 +102,13 @@ class VMambaBackbone(nn.Module):
         return self._stage_channels
 
 
-@register_backbone("vmamba_tiny")
 def vmamba_tiny_backbone(pretrained: bool = True, checkpoint_path: str = "") -> VMambaBackbone:
     return VMambaBackbone(variant="vmamba_tiny", pretrained=pretrained, checkpoint_path=checkpoint_path)
 
 
-@register_backbone("vmamba_small")
 def vmamba_small_backbone(pretrained: bool = True, checkpoint_path: str = "") -> VMambaBackbone:
     return VMambaBackbone(variant="vmamba_small", pretrained=pretrained, checkpoint_path=checkpoint_path)
 
 
-@register_backbone("vmamba_base")
 def vmamba_base_backbone(pretrained: bool = True, checkpoint_path: str = "") -> VMambaBackbone:
     return VMambaBackbone(variant="vmamba_base", pretrained=pretrained, checkpoint_path=checkpoint_path)

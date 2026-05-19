@@ -30,7 +30,7 @@ import transferlearning.models.backbones.vit           # noqa: F401
 import transferlearning.models.backbones.swint         # noqa: F401
 
 try:
-    import transferlearning.models.backbones.vmamba        # noqa: F401
+    import transferlearning.models.backbones.VMambaModels.vmamba # noqa: F401
     import transferlearning.models.backbones.MambaVisionModels.mamba_vision   # noqa: F401
 except ModuleNotFoundError:
     print("mamba-ssm not available, cannot use mamba models")
