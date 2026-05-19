@@ -1569,6 +1569,8 @@ class VSSM(nn.Module):
         change_name("head", "classifier.head")
 
         return super()._load_from_state_dict(state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs)
+    def get_stage_channels(self) -> list[int]:
+        return self.dims
 
 
 # compatible with openmmlab
