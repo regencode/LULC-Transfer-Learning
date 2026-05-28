@@ -4,8 +4,24 @@ import torch
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 
-from ..datasets.base_dataset import ISPRS_CLASSES, ISPRS_COLOR_MAP
 
+ISPRS_CLASSES = [
+    "impervious_surface",
+    "building",
+    "low_vegetation",
+    "tree",
+    "car",
+    "clutter",
+]
+
+ISPRS_COLOR_MAP = {
+    (255, 255, 255): 0,
+    (0, 0, 255): 1,
+    (0, 255, 255): 2,
+    (0, 255, 0): 3,
+    (255, 255, 0): 4,
+    (255, 0, 0): 5,
+}
 
 ISPRS_CMAP_ARRAY = np.zeros((len(ISPRS_CLASSES), 3), dtype=np.float32)
 for rgb, idx in ISPRS_COLOR_MAP.items():
@@ -21,15 +37,6 @@ def visualize_prediction(
     class_names: Optional[List[str]] = None,
     save_path: Optional[str] = None,
 ):
-    """Display [original image | ground truth | prediction] in a single row.
-
-    Args:
-        image: (C, H, W) tensor, float [0, 1] or ImageNet-normalized.
-        label: (H, W) tensor of class indices.
-        prediction: (num_classes, H, W) logits/probs or (H, W) class indices.
-        class_names: Optional list for colorbar ticks.
-        save_path: If provided, saves the figure instead of showing it.
-    """
     if class_names is None:
         class_names = ISPRS_CLASSES
 

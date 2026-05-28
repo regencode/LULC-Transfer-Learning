@@ -12,7 +12,13 @@ import torch.nn.functional as F
 import torch.utils.checkpoint as checkpoint
 from timm.models.layers import DropPath, trunc_normal_
 from fvcore.nn import FlopCountAnalysis, flop_count_str, flop_count, parameter_count
-from transferlearning.models.backbones.registry import register_backbone
+try:
+    from transferlearning.models.backbones.registry import register_backbone
+except ImportError:
+    def register_backbone(name):
+        def decorator(fn):
+            return fn
+        return decorator
 
 DropPath.__repr__ = lambda self: f"timm.DropPath({self.drop_prob})"
 # train speed is slower after enabling this opts.

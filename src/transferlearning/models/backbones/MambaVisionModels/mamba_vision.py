@@ -9,7 +9,13 @@
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
 
 
-from ..registry import register_backbone
+try:
+    from ..registry import register_backbone
+except ImportError:
+    def register_backbone(name):
+        def decorator(fn):
+            return fn
+        return decorator
 import torch
 import torch.nn as nn
 from timm.models.registry import register_model

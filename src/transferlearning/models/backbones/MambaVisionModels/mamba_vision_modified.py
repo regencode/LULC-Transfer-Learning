@@ -13,7 +13,13 @@ import argparse
 import torch
 import torch.nn as nn
 from timm.models.registry import register_model
-from ..registry import register_backbone
+try:
+    from ..registry import register_backbone
+except ImportError:
+    def register_backbone(name):
+        def decorator(fn):
+            return fn
+        return decorator
 import math
 from timm.models.layers import trunc_normal_, DropPath, LayerNorm2d
 from timm.models._builder import resolve_pretrained_cfg
