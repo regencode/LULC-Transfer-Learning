@@ -6,7 +6,16 @@ env_cfg = dict(
     dist_cfg=dict(backend="nccl"),
 )
 
-vis_backends = [dict(type="LocalVisBackend")]
+vis_backends = [
+    dict(type="LocalVisBackend"),
+    dict(
+        type="WandbVisBackend",
+        init_kwargs=dict(
+            project="lulc-segmentation",
+            config=dict(lr=1e-4, epochs=100),
+        ),
+    ),
+]
 visualizer = dict(
     type="SegLocalVisualizer",
     vis_backends=vis_backends,
