@@ -13,18 +13,18 @@ model = dict(
     ),
     backbone=dict(
         type="MambaVisionBackbone",
-        variant="mambavision_t",
+        variant="mambavision_b",
         pretrained=None,
     ),
     decode_head=dict(
         type="UPerHead",
-        in_channels=[80, 160, 320, 640],
+        in_channels=[128, 256, 512, 1024],
         in_index=[0, 1, 2, 3],
         channels=256,
         pool_scales=(1, 2, 3, 6),
         dropout_ratio=0.1,
         num_classes=6,
-        norm_cfg=norm_cfg,
+        norm_cfg=dict(type="SyncBN", requires_grad=True),
         align_corners=False,
         loss_decode=dict(
             type="CrossEntropyLoss",
@@ -35,14 +35,14 @@ model = dict(
     ),
     auxiliary_head=dict(
         type="FCNHead",
-        in_channels=320,
+        in_channels=512,
         in_index=2,
         channels=256,
         num_convs=1,
         concat_input=False,
         dropout_ratio=0.1,
         num_classes=6,
-        norm_cfg=norm_cfg,
+        norm_cfg=dict(type="SyncBN", requires_grad=True),
         align_corners=False,
         loss_decode=dict(
             type="CrossEntropyLoss",

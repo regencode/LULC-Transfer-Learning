@@ -1,0 +1,57 @@
+norm_cfg = dict(type="SyncBN", requires_grad=True)
+
+model = dict(
+    type="EncoderDecoder",
+    data_preprocessor=dict(
+        type="SegDataPreProcessor",
+        mean=[123.675, 116.28, 103.53],
+        std=[58.395, 57.12, 57.375],
+        bgr_to_rgb=True,
+        pad_val=0,
+        seg_pad_val=255,
+        size_divisor=32,
+    ),
+    backbone=dict(
+        type="VMambaBackbone",
+        variant="vmamba_base",
+        pretrained=None,
+    ),
+    decode_head=dict(
+        type="DepthwiseSeparableASPPHead",
+        in_channels=1024,
+        in_index=3,
+        channels=512,
+        dilations=(1, 6, 12, 18),
+        c1_in_channels=128,
+        c1_channels=48,
+        num_classes=6,
+        dropout_ratio=0.1,
+        norm_cfg=dict(type="SyncBN", requires_grad=True),
+        align_corners=False,
+        loss_decode=dict(
+            type="CrossEntropyLoss",
+            use_sigmoid=False,
+            loss_weight=1.0,
+            class_weight=[0.35, 0.45, 0.50, 0.72, 6.47, 2.33],
+        ),
+    ),
+    auxiliary_head=dict(
+        type="FCNHead",
+        in_channels=512,
+        in_index=2,
+        channels=256,
+        num_convs=1,
+        concat_input=False,
+        dropout_ratio=0.1,
+        num_classes=6,
+        norm_cfg=dict(type="SyncBN", requires_grad=True),
+        align_corners=False,
+        loss_decode=dict(
+            type="CrossEntropyLoss",
+            use_sigmoid=False,
+            loss_weight=0.4,
+        ),
+    ),
+    train_cfg=dict(),
+    test_cfg=dict(mode="whole"),
+)

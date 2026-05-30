@@ -1,5 +1,5 @@
 _base_ = [
-    "../_base_/models/mambavision_t_upernet.py",
+    "../_base_/models/mambavision_b_upernet.py",
     "../_base_/datasets/potsdam_patch256.py",
     "../_base_/schedules/schedule_adamw_100e.py",
     "../_base_/default_runtime.py",
@@ -11,4 +11,10 @@ custom_imports = dict(
         "transferlearning.models.backbones.mmseg_mambavision",
     ],
     allow_failed_imports=False,
+)
+
+model = dict(auxiliary_head=None)
+model = dict(
+    backbone=dict(pretrained="/tmp/mambavision_base_1k.pth.tar"),
+    auxiliary_head=None,
 )

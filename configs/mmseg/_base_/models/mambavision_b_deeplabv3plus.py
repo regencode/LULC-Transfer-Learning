@@ -1,6 +1,5 @@
 norm_cfg = dict(type="SyncBN", requires_grad=True)
 
-
 model = dict(
     type="EncoderDecoder",
     data_preprocessor=dict(
@@ -13,25 +12,21 @@ model = dict(
         size_divisor=32,
     ),
     backbone=dict(
-        type="ResNetV1c",
-        depth=50,
-        num_stages=4,
-        out_indices=(0, 1, 2, 3),
-        dilations=(1, 1, 1, 1),
-        strides=(1, 2, 2, 2),
-        norm_cfg=dict(type="SyncBN", requires_grad=True),
-        norm_eval=False,
-        contract_dilation=True,
-        init_cfg=dict(type="Pretrained", checkpoint="open-mmlab://resnet50_v1c"),
+        type="MambaVisionBackbone",
+        variant="mambavision_b",
+        pretrained=None,
     ),
     decode_head=dict(
-        type="UNetHead",
-        in_channels=[256, 512, 1024, 2048],
-        in_index=[0, 1, 2, 3],
-        channels=256,
+        type="DepthwiseSeparableASPPHead",
+        in_channels=1024,
+        in_index=3,
+        channels=512,
+        dilations=(1, 6, 12, 18),
+        c1_in_channels=128,
+        c1_channels=48,
         num_classes=6,
         dropout_ratio=0.1,
-        norm_cfg=norm_cfg,
+        norm_cfg=dict(type="SyncBN", requires_grad=True),
         align_corners=False,
         loss_decode=dict(
             type="CrossEntropyLoss",
@@ -42,14 +37,14 @@ model = dict(
     ),
     auxiliary_head=dict(
         type="FCNHead",
-        in_channels=1024,
+        in_channels=512,
         in_index=2,
         channels=256,
         num_convs=1,
         concat_input=False,
         dropout_ratio=0.1,
         num_classes=6,
-        norm_cfg=norm_cfg,
+        norm_cfg=dict(type="SyncBN", requires_grad=True),
         align_corners=False,
         loss_decode=dict(
             type="CrossEntropyLoss",
