@@ -1,5 +1,13 @@
 norm_cfg = dict(type="SyncBN", requires_grad=True)
 
+POTSDAM_CLASS_PROPORTIONS = [31.35, 24.81, 22.07, 15.31, 1.71, 4.75]
+NUM_CLASSES = 6
+POTSDAM_CLASS_WEIGHTS = [
+    sum(POTSDAM_CLASS_PROPORTIONS) / (NUM_CLASSES * POTSDAM_CLASS_PROPORTIONS[i])
+    for i in range(NUM_CLASSES)
+]
+POTSDAM_CLASS_WEIGHTS = [x / sum(POTSDAM_CLASS_WEIGHTS) for x in POTSDAM_CLASS_WEIGHTS]
+
 model = dict(
     type="EncoderDecoder",
     data_preprocessor=dict(
@@ -39,7 +47,7 @@ model = dict(
             type="CrossEntropyLoss",
             use_sigmoid=False,
             loss_weight=1.0,
-            class_weight=[0.35, 0.45, 0.50, 0.72, 6.47, 2.33],
+            class_weight=POTSDAM_CLASS_WEIGHTS,
         ),
     ),
     auxiliary_head=dict(
@@ -57,6 +65,7 @@ model = dict(
             type="CrossEntropyLoss",
             use_sigmoid=False,
             loss_weight=0.4,
+            class_weight=POTSDAM_CLASS_WEIGHTS,
         ),
     ),
     train_cfg=dict(),

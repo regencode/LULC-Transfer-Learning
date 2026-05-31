@@ -9,11 +9,6 @@ train_pipeline = [
     dict(type="LoadAnnotations", reduce_zero_label=False),
     dict(type="RandomFlip", prob=0.5, direction="horizontal"),
     dict(type="RandomFlip", prob=0.5, direction="vertical"),
-    dict(type="PhotoMetricDistortion",
-         brightness_delta=32,
-         contrast_range=(0.5, 1.5),
-         saturation_range=(0.5, 1.5),
-         hue_delta=18),
     dict(type="PackSegInputs"),
 ]
 

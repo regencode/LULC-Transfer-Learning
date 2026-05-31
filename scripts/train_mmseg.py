@@ -50,6 +50,31 @@ def parse_args():
     return args, cfg_options
 
 
+BACKBONE_NAMES = {
+    "ResNetV1c": lambda bb: f"resnet{bb.depth}",
+    "VMambaBackbone": lambda bb: bb.variant.replace("vmamba_", "vmamba_").replace("small", "s").replace("base", "b"),
+    "MambaVisionBackbone": lambda bb: bb.variant,
+}
+
+HEAD_NAMES = {
+    "DepthwiseSeparableASPPHead": "deeplabv3plus",
+    "UPerHead": "upernet",
+}
+
+DATASET_NAMES = {
+    "ISPRSPotsdamDataset": "potsdam",
+}
+
+
+def build_run_name(cfg, seed):
+    bb = cfg.model.backbone
+    backbone_name = BACKBONE_NAMES[bb.type](bb)
+    head_name = HEAD_NAMES[cfg.model.decode_head.type]
+    dataset_name = DATASET_NAMES[cfg.train_dataloader.dataset.type]
+    has_aux = cfg.model.auxiliary_head is not None
+    return f"{dataset_name}-{backbone_name}{head_name}-seed{seed}-aux{has_aux}"
+
+
 def main():
     args, cfg_options = parse_args()
 
@@ -61,6 +86,12 @@ def main():
         cfg.work_dir = args.work_dir
 
     cfg.randomness = dict(seed=args.seed)
+
+    run_name = build_run_name(cfg, args.seed)
+    for vb in cfg.visualizer.vis_backends:
+        if vb.type == "WandbVisBackend":
+            vb.init_kwargs.name = run_name
+            break
 
     if args.amp:
         cfg.optim_wrapper.type = "AmpOptimWrapper"
