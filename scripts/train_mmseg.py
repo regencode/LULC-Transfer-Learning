@@ -93,6 +93,14 @@ def main():
     else:
         runner.train()
 
+    best_ckpts = sorted(glob.glob(os.path.join(cfg.work_dir, "best_mIoU_*.pth")))
+    if best_ckpts:
+        link_path = os.path.join(cfg.work_dir, "best.ckpt")
+        if os.path.islink(link_path) or os.path.exists(link_path):
+            os.remove(link_path)
+        os.symlink(os.path.basename(best_ckpts[-1]), link_path)
+        print(f"Created symlink: {link_path} -> {os.path.basename(best_ckpts[-1])}")
+
 
 if __name__ == "__main__":
     main()

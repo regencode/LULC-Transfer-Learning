@@ -15,6 +15,7 @@ Usage:
 
 import argparse
 import ast
+import glob
 import json
 import os
 import time
@@ -41,7 +42,7 @@ IMAGENET_STD = torch.tensor([58.395, 57.12, 57.375]).view(1, 3, 1, 1)
 def parse_args():
     parser = argparse.ArgumentParser(description="Test LULC Segmentation Model (MMSegmentation)")
     parser.add_argument("config", type=str, help="Path to config file")
-    parser.add_argument("--checkpoint", type=str, required=True, help="Path to checkpoint file")
+    parser.add_argument("--checkpoint", type=str, default=None, help="Path to checkpoint file (default: <work_dir>/best.ckpt)")
     parser.add_argument("--work-dir", type=str, default=None, help="Working directory for outputs")
     parser.add_argument("--batch-size", type=int, default=None, help="Override batch size")
     parser.add_argument("--full-report", action="store_true", help="Print full report: metrics + inference stats")
@@ -240,6 +241,15 @@ def main():
 
     if args.work_dir:
         cfg.work_dir = args.work_dir
+
+    if args.checkpoint is None:
+        args.checkpoint = os.path.join(cfg.work_dir, "best.ckpt")
+    if not os.path.exists(args.checkpoint):
+        best_glob = sorted(glob.glob(os.path.join(cfg.work_dir, "best_mIoU_*.pth")))
+        if best_glob:
+            args.checkpoint = best_glob[-1]
+        else:
+            raise FileNotFoundError(f"No checkpoint found at {args.checkpoint} and no best_mIoU_*.pth in {cfg.work_dir}")
 
     cfg.load_from = args.checkpoint
 
