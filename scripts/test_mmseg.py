@@ -179,12 +179,11 @@ def visualize_prediction(runner, image_path, output_dir):
 
     Image.fromarray(img).save(os.path.join(output_dir, "image.png"))
     Image.fromarray(label_rgb).save(os.path.join(output_dir, "label.png"))
-    print(f"  Saved image.png ({orig_w}x{orig_h})")
-    print(f"  Saved label.png ({orig_w}x{orig_h})")
+    print(f"  Saved image.png ({img.shape})") # [H, W, C]
+    print(f"  Saved label.png ({label_rgb.shape})")
 
-    img_tensor = torch.from_numpy(img).permute(2, 0, 1).float().unsqueeze(0)
+    img_tensor = torch.from_numpy(img).permute(2, 0, 1).float().unsqueeze(0) # [1, C, H, W]
     img_tensor = (img_tensor - IMAGENET_MEAN) / IMAGENET_STD
-
     pad_size = int(np.ceil(orig_h / 256)) * 256
     _, _, H, W = img_tensor.shape
     img_padded = F.pad(img_tensor, (0, pad_size - W, 0, pad_size - H), mode='reflect')
@@ -195,7 +194,7 @@ def visualize_prediction(runner, image_path, output_dir):
     batch_size = 8
 
     positions = [
-        (w, h)
+        (h, w)
         for w in range(0, pad_size - patch_size + 1, stride)
         for h in range(0, pad_size - patch_size + 1, stride)
     ]
@@ -213,7 +212,13 @@ def visualize_prediction(runner, image_path, output_dir):
             ], dim=0).to(device)
 
             x = model.extract_feat(patches)
-            logits = model.decode_head.forward(x)
+            batch_img_metas = [dict(
+                img_shape=(patch_size, patch_size),
+                ori_shape=(patch_size, patch_size),
+                pad_shape=(patch_size, patch_size),
+                padding_size=[0, 0, 0, 0],
+                )] * len(batch_positions)
+            logits = model.decode_head.predict(x, batch_img_metas, model.test_cfg)
 
             for j, (w, h) in enumerate(batch_positions):
                 pred_full[:, :, w:w + patch_size, h:h + patch_size] += logits[j].cpu().unsqueeze(0)
