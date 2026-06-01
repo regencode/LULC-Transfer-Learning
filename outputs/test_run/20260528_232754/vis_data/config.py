@@ -21,7 +21,7 @@ default_hooks = dict(
         rule='greater',
         save_best='mIoU',
         type='CheckpointHook'),
-    logger=dict(interval=50, log_metric_by_epoch=True, type='LoggerHook'),
+    logger=dict(interval=500, log_metric_by_epoch=True, type='LoggerHook'),
     param_scheduler=dict(type='ParamSchedulerHook'),
     sampler_seed=dict(type='DistSamplerSeedHook'),
     timer=dict(type='IterTimerHook'),
