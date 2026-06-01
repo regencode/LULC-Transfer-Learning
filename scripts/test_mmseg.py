@@ -79,7 +79,7 @@ def measure_inference(model, dataloader, device, num_warmup=5, num_iters=50):
 
     with torch.no_grad():
         for i, data_batch in enumerate(dataloader):
-            data_batch = Runner.build_model_input(data_batch)
+            data_batch = model.data_preprocessor(data_batch, False)
             if i < num_warmup:
                 _ = model(**data_batch, mode='predict')
                 torch.cuda.synchronize()

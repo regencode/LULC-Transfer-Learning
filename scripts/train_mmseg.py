@@ -100,7 +100,6 @@ def main():
     runner = Runner.from_cfg(cfg)
 
     if args.resume:
-        import glob
         ckpt_dir = cfg.work_dir
         last_ckpt = os.path.join(ckpt_dir, "last_checkpoint")
         if os.path.exists(last_ckpt):
