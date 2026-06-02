@@ -307,12 +307,15 @@ def main():
     )
 
     _wandb_run_id = None
+    _wandb_init_kwargs = None
     if args.visualize:
+        import wandb
         for vb in cfg.visualizer.vis_backends:
             if vb.type == "WandbVisBackend":
                 if wandb.run is None:
                     wandb.init(**vb.init_kwargs)
                 _wandb_run_id = wandb.run.id
+                _wandb_init_kwargs = vb.init_kwargs.copy()
                 break
 
     runner = Runner.from_cfg(cfg)
@@ -365,7 +368,13 @@ def main():
         visualize_prediction(runner, args.visualize, vis_dir)
 
         if _wandb_run_id is not None:
-            wandb.init(id=_wandb_run_id, resume="allow")
+            import wandb
+            reattach_kwargs = {"id": _wandb_run_id, "resume": "must"}
+            if _wandb_init_kwargs:
+                reattach_kwargs["project"] = _wandb_init_kwargs.get("project")
+                if "entity" in _wandb_init_kwargs:
+                    reattach_kwargs["entity"] = _wandb_init_kwargs["entity"]
+            wandb.init(**reattach_kwargs)
             wandb.log({
                 "eval/comparison": wandb.Image(os.path.join(vis_dir, "comparison.png")),
                 "eval/image": wandb.Image(os.path.join(vis_dir, "image.png")),
