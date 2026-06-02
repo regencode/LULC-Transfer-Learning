@@ -25,6 +25,7 @@ import torch
 import torch.nn.functional as F
 from mmengine.config import Config
 from mmengine.runner import Runner
+from .train_mmseg import build_run_name
 
 ISPRS_PALETTE = np.array([
     [255, 255, 255],
@@ -246,6 +247,12 @@ def main():
 
     if args.work_dir:
         cfg.work_dir = args.work_dir
+
+    run_name = build_run_name(cfg, args.seed)
+    for vb in cfg.visualizer.vis_backends:
+        if vb.type == "WandbVisBackend":
+            vb.init_kwargs.name = f'eval-{run_name}'
+            break
 
     if args.checkpoint is None:
         args.checkpoint = os.path.join(cfg.work_dir, "best.ckpt")
