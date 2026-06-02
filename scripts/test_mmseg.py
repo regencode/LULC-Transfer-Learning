@@ -26,6 +26,11 @@ import torch.nn.functional as F
 from mmengine.config import Config
 from mmengine.runner import Runner
 from .train_mmseg import build_run_name
+import wandb
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
 
 ISPRS_PALETTE = np.array([
     [255, 255, 255],
@@ -237,6 +242,16 @@ def visualize_prediction(runner, image_path, output_dir):
     Image.fromarray(pred_color).save(os.path.join(output_dir, "pred.png"))
     print(f"  Saved pred.png ({orig_w}x{orig_h})")
 
+    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+    for ax, arr, title in zip(axes, [img, label_rgb, pred_color], ["RGB Image", "Label", "Prediction"]):
+        ax.imshow(arr)
+        ax.set_title(title)
+        ax.axis("off")
+    fig.tight_layout()
+    fig.savefig(os.path.join(output_dir, "comparison.png"), dpi=150, bbox_inches="tight")
+    plt.show()
+    print(f"  Saved comparison.png")
+
 
 def main():
     args, cfg_options = parse_args()
@@ -269,6 +284,15 @@ def main():
         type="IoUMetric",
         iou_metrics=["mIoU", "mDice", "mFscore"],
     )
+
+    _wandb_run_id = None
+    if args.visualize:
+        for vb in cfg.visualizer.vis_backends:
+            if vb.type == "WandbVisBackend":
+                if wandb.run is None:
+                    wandb.init(**vb.init_kwargs)
+                _wandb_run_id = wandb.run.id
+                break
 
     runner = Runner.from_cfg(cfg)
 
@@ -318,6 +342,18 @@ def main():
         print("=" * 60)
         vis_dir = os.path.join(runner.work_dir, "visualizations")
         visualize_prediction(runner, args.visualize, vis_dir)
+
+        if _wandb_run_id is not None:
+            import wandb
+            wandb.init(id=_wandb_run_id, resume="allow")
+            wandb.log({
+                "eval/comparison": wandb.Image(os.path.join(vis_dir, "comparison.png")),
+                "eval/image": wandb.Image(os.path.join(vis_dir, "image.png")),
+                "eval/label": wandb.Image(os.path.join(vis_dir, "label.png")),
+                "eval/pred": wandb.Image(os.path.join(vis_dir, "pred.png")),
+            })
+            print("  Synced visualizations to wandb")
+            wandb.finish()
 
 
 if __name__ == "__main__":
