@@ -5,85 +5,49 @@ backbone interface: forward() returns a tuple of multi-scale feature tensors.
 """
 
 import torch
-import torch.nn as nn
 from mmengine.model import BaseModule
 from mmseg.registry import MODELS
+from pathlib import Path
 
-from .VMambaModels.vmamba import Backbone_VSSM
+from .VMambaModels.vmamba import vmamba_small_s2l15, vmamba_base_s2l15
 
-VMAMBA_CONFIGS = {
-    "vmamba_tiny": dict(
-        depths=[2, 2, 8, 2],
-        dims=96,
-        drop_path_rate=0.2,
-        ssm_d_state=1,
-        ssm_ratio=1.0,
-        forward_type="v05_noz",
-        mlp_ratio=4.0,
-    ),
-    "vmamba_small": dict(
-        depths=[2, 2, 15, 2],
-        dims=96,
-        drop_path_rate=0.3,
-        ssm_d_state=1,
-        ssm_ratio=2.0,
-        forward_type="v05_noz",
-        mlp_ratio=4.0,
-    ),
-    "vmamba_base": dict(
-        depths=[2, 2, 15, 2],
-        dims=128,
-        drop_path_rate=0.6,
-        ssm_d_state=1,
-        ssm_ratio=2.0,
-        forward_type="v05_noz",
-        mlp_ratio=4.0,
-    ),
+VMAMBA_FACTORIES = {
+    "vmamba_small": vmamba_small_s2l15,
+    "vmamba_base": vmamba_base_s2l15,
+}
+
+VMAMBA_URLS = {
+    "vmamba_small": "https://github.com/MzeroMiko/VMamba/releases/download/%23v2cls/vssm_small_0229_ckpt_epoch_222.pth",
+    "vmamba_base": "https://github.com/MzeroMiko/VMamba/releases/download/%23v2cls/vssm_base_0229_ckpt_epoch_237.pth",
 }
 
 
 @MODELS.register_module()
 class VMambaBackbone(BaseModule):
-    arch_settings = VMAMBA_CONFIGS
+    arch_factories = VMAMBA_FACTORIES
 
     def __init__(
         self,
-        variant="vmamba_tiny",
+        variant="vmamba_small",
         pretrained=None,
         init_cfg=None,
         **kwargs,
     ):
         super().__init__(init_cfg=init_cfg)
-        if variant not in self.arch_settings:
+        if variant not in self.arch_factories:
             raise ValueError(f"Unknown VMamba variant: {variant}. "
-                             f"Available: {list(self.arch_settings.keys())}")
+                             f"Available: {list(self.arch_factories.keys())}")
 
-        cfg = self.arch_settings[variant]
-        self.model = Backbone_VSSM(
-            pretrained=pretrained,
-            patch_size=4,
-            in_chans=3,
-            num_classes=1000,
-            ssm_dt_rank="auto",
-            ssm_act_layer="silu",
-            ssm_conv=3,
-            ssm_conv_bias=False,
-            ssm_drop_rate=0.0,
-            ssm_init="v0",
-            mlp_act_layer="gelu",
-            mlp_drop_rate=0.0,
-            gmlp=False,
-            patch_norm=True,
-            norm_layer="ln2d",
-            downsample_version="v3",
-            patchembed_version="v2",
-            use_checkpoint=False,
-            posembed=False,
-            imgsize=256,
-            **cfg,
-        )
+        self.model = self.arch_factories[variant](pretrained="")
+        if pretrained:
+            self._load_pretrained(pretrained, VMAMBA_URLS.get(variant))
         self.out_indices = (0, 1, 2, 3)
         self._out_channels = self.model.dims
+
+    def _load_pretrained(self, path, url=None):
+        if not Path(path).is_file() and url:
+            torch.hub.download_url_to_file(url=url, dst=path)
+        self.model.load_pretrained(path)
 
     def forward(self, x):
         features_dict = self.model(x)

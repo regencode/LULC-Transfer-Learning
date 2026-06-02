@@ -10,7 +10,7 @@ from mmengine.model import BaseModule
 from mmseg.registry import MODELS
 
 try:
-    from .MambaVisionModels.mamba_vision_modified import MambaVision
+    from .MambaVisionModels.mamba_vision import MambaVision
     MAMBAVISION_AVAILABLE = True
 except ImportError:
     MAMBAVISION_AVAILABLE = False
