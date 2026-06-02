@@ -25,12 +25,35 @@ import torch
 import torch.nn.functional as F
 from mmengine.config import Config
 from mmengine.runner import Runner
-from .train_mmseg import build_run_name
 import wandb
+from fvcore.nn import FlopCountAnalysis
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from PIL import Image
 
+BACKBONE_NAMES = {
+    "ResNetV1c": lambda bb: f"resnet{bb.depth}",
+    "VMambaBackbone": lambda bb: bb.variant.replace("vmamba_", "vmamba_").replace("small", "s").replace("base", "b"),
+    "MambaVisionBackbone": lambda bb: bb.variant,
+}
+
+HEAD_NAMES = {
+    "DepthwiseSeparableASPPHead": "deeplabv3plus",
+    "UPerHead": "upernet",
+}
+
+DATASET_NAMES = {
+    "ISPRSPotsdamDataset": "potsdam",
+}
+
+def build_run_name(cfg, seed):
+    bb = cfg.model.backbone
+    backbone_name = BACKBONE_NAMES[bb.type](bb)
+    head_name = HEAD_NAMES[cfg.model.decode_head.type]
+    dataset_name = DATASET_NAMES[cfg.train_dataloader.dataset.type]
+    has_aux = cfg.model.auxiliary_head is not None
+    return f"{dataset_name}-{backbone_name}{head_name}-seed{seed}-aux{has_aux}"
 
 ISPRS_PALETTE = np.array([
     [255, 255, 255],
@@ -122,7 +145,6 @@ def measure_inference(model, dataloader, device, num_warmup=5, num_iters=50):
 
 def measure_flops(model, config):
     try:
-        from fvcore.nn import FlopCountAnalysis
         device = next(model.parameters()).device
         dummy_input = torch.randn(1, 3, 256, 256).to(device)
         fca = FlopCountAnalysis(model, dummy_input)
@@ -164,7 +186,6 @@ def visualize_prediction(runner, image_path, output_dir):
     Label path is derived from image_path by replacing
     ``images/`` with ``labels/`` and ``_RGB.tif`` with ``_label.tif``.
     """
-    from PIL import Image
 
     os.makedirs(output_dir, exist_ok=True)
 
@@ -344,7 +365,6 @@ def main():
         visualize_prediction(runner, args.visualize, vis_dir)
 
         if _wandb_run_id is not None:
-            import wandb
             wandb.init(id=_wandb_run_id, resume="allow")
             wandb.log({
                 "eval/comparison": wandb.Image(os.path.join(vis_dir, "comparison.png")),
