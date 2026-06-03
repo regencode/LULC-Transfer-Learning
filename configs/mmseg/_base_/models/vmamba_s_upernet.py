@@ -39,6 +39,7 @@ model = dict(
             use_sigmoid=False,
             loss_weight=1.0,
             class_weight=POTSDAM_CLASS_WEIGHTS,
+            avg_non_ignore=True,
         ),
     ),
     auxiliary_head=dict(
@@ -57,6 +58,7 @@ model = dict(
             use_sigmoid=False,
             loss_weight=0.4,
             class_weight=POTSDAM_CLASS_WEIGHTS,
+            avg_non_ignore=True,
         ),
     ),
     train_cfg=dict(),
