@@ -15,7 +15,7 @@ test_cfg = dict(type="TestLoop")
 
 default_hooks = dict(
     timer=dict(type="IterTimerHook"),
-    logger=dict(type="LoggerHook", interval=50, log_metric_by_epoch=True),
+    logger=dict(type="LoggerHook", interval=500, log_metric_by_epoch=True),
     param_scheduler=dict(type="ParamSchedulerHook"),
     checkpoint=dict(
         type="CheckpointHook",
