@@ -20,7 +20,6 @@ def parse_args():
     parser.add_argument("config", type=str, help="Path to config file")
     parser.add_argument("--work-dir", type=str, default=None, help="Working directory to save logs and models")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
-    parser.add_argument("--amp", action="store_true", default=False, help="Enable automatic mixed precision training")
     parser.add_argument("--resume", action="store_true", default=False, help="Resume from the latest checkpoint")
     parser.add_argument("--cfg-options", nargs="+", action="append", default=[], help="Override config options (key=value)")
     parser.add_argument("--batch-size", type=int, default=None, help="Override batch size for train/val/test")
@@ -92,10 +91,6 @@ def main():
         if vb.type == "WandbVisBackend":
             vb.init_kwargs.name = run_name
             break
-
-    if args.amp:
-        cfg.optim_wrapper.type = "AmpOptimWrapper"
-        cfg.optim_wrapper.loss_scale = "dynamic"
 
     runner = Runner.from_cfg(cfg)
 

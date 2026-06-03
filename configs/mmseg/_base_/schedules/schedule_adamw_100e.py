@@ -1,8 +1,11 @@
 optim_wrapper = dict(
-    optimizer=dict(type="AdamW", lr=0.0001, weight_decay=0.0001),
+    type="AmpOptimWrapper",
+    optimizer=dict(type="AdamW", lr=0.00005, weight_decay=0.01),
+    dtype="bfloat16",
 )
 
 param_scheduler = [
+    dict(type="LinearLR", start_factor=0.001, by_epoch=False, begin=0, end=1000),
     dict(type="LinearLR", start_factor=1.0, end_factor=0.0, by_epoch=True, begin=0, end=100),
 ]
 
