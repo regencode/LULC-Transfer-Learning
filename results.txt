@@ -1,0 +1,190 @@
+06/04 19:32:24 - mmengine - INFO - Load checkpoint from outputs/resnet50_upernet/best.ckpt
+06/04 19:32:59 - mmengine - INFO - per class results:
+06/04 19:32:59 - mmengine - INFO -
++--------------------+-------+-------+-------+--------+-----------+--------+
+|       Class        |  IoU  |  Acc  |  Dice | Fscore | Precision | Recall |
++--------------------+-------+-------+-------+--------+-----------+--------+
+| impervious_surface | 83.99 | 89.01 |  91.3 |  91.3  |   93.71   | 89.01  |
+|      building      |  90.9 | 93.76 | 95.24 | 95.24  |   96.76   | 93.76  |
+|   low_vegetation   | 64.55 | 83.14 | 78.45 | 78.45  |   74.27   | 83.14  |
+|        tree        | 71.67 | 83.09 |  83.5 |  83.5  |   83.91   | 83.09  |
+|        car         | 80.29 | 96.33 | 89.06 | 89.06  |   82.82   | 96.33  |
+|      clutter       | 37.46 |  62.4 |  54.5 |  54.5  |   48.38   |  62.4  |
++--------------------+-------+-------+-------+--------+-----------+--------+
+06/04 19:32:59 - mmengine - INFO - Epoch(test) [265/265]    aAcc: 88.3600  mIoU: 71.4800  mAcc: 84.6200  mDice: 82.0100  mFscore: 82.0100  mPrecision: 79.9700  mRecall: 84.6200  data_time: 0.0263  time: 0.1296
+============================================================
+MODEL & INFERENCE PROFILE
+============================================================
+  Total parameters:     39,658,860 (39.66M)
+  Trainable parameters: 39,658,860 (39.66M)
+  FLOPs (256x256):      19.50 GFLOPs
+  Avg latency:          52.24 +/- 0.06 ms
+  Throughput:           612.6 imgs/sec
+  Peak GPU memory:      1850.8 MB
+
+  Report saved to /content/outputs/resnet50_upernet/test_report.json
+
+06/04 18:50:40 - mmengine - INFO - Load checkpoint from outputs/resnet101_upernet/best.ckpt
+06/04 18:51:17 - mmengine - INFO - per class results:
+06/04 18:51:17 - mmengine - INFO -
++--------------------+-------+-------+-------+--------+-----------+--------+
+|       Class        |  IoU  |  Acc  |  Dice | Fscore | Precision | Recall |
++--------------------+-------+-------+-------+--------+-----------+--------+
+| impervious_surface |  83.7 | 89.78 | 91.12 | 91.12  |   92.51   | 89.78  |
+|      building      | 90.14 | 93.38 | 94.81 | 94.81  |   96.29   | 93.38  |
+|   low_vegetation   |  65.5 | 80.59 | 79.15 | 79.15  |   77.76   | 80.59  |
+|        tree        |  72.3 |  85.1 | 83.93 | 83.93  |   82.78   |  85.1  |
+|        car         | 79.15 | 96.56 | 88.36 | 88.36  |   81.45   | 96.56  |
+|      clutter       | 38.82 | 62.78 | 55.93 | 55.93  |   50.43   | 62.78  |
++--------------------+-------+-------+-------+--------+-----------+--------+
+06/04 18:51:17 - mmengine - INFO - Epoch(test) [265/265]    aAcc: 88.4200  mIoU: 71.6000  mAcc: 84.7000  mDice: 82.2200  mFscore: 82.2200  mPrecision: 80.2000  mRecall: 84.7000  data_time: 0.0267  time: 0.1374
+============================================================
+MODEL & INFERENCE PROFILE
+============================================================
+  Total parameters:     58,650,988 (58.65M)
+  Trainable parameters: 58,650,988 (58.65M)
+  FLOPs (256x256):      24.36 GFLOPs
+  Avg latency:          60.55 +/- 0.12 ms
+  Throughput:           528.5 imgs/sec
+  Peak GPU memory:      1923.2 MB
+
+  Report saved to /content/outputs/resnet101_upernet/test_report.json
+
+
+06/04 22:17:49 - mmengine - INFO - Load checkpoint from outputs/mambavision_s_upernet/best.ckpt
+06/04 22:18:38 - mmengine - INFO - per class results:
+06/04 22:18:38 - mmengine - INFO -
++--------------------+-------+-------+-------+--------+-----------+--------+
+2026-06-05 05:18:38
+|       Class        |  IoU  |  Acc  |  Dice | Fscore | Precision | Recall |
+2026-06-05 05:18:38
++--------------------+-------+-------+-------+--------+-----------+--------+
+2026-06-05 05:18:38
+| impervious_surface | 84.32 | 89.41 | 91.49 | 91.49  |   93.68   | 89.41  |
+2026-06-05 05:18:38
+|      building      |  91.2 | 94.43 |  95.4 |  95.4  |   96.39   | 94.43  |
+2026-06-05 05:18:38
+|   low_vegetation   | 66.02 | 82.34 | 79.53 | 79.53  |   76.92   | 82.34  |
+2026-06-05 05:18:38
+|        tree        |  72.7 | 84.95 | 84.19 | 84.19  |   83.45   | 84.95  |
+2026-06-05 05:18:38
+|        car         |  79.3 | 97.22 | 88.45 | 88.45  |   81.14   | 97.22  |
+2026-06-05 05:18:38
+|      clutter       | 41.14 |  64.6 |  58.3 |  58.3  |   53.12   |  64.6  |
+2026-06-05 05:18:38
++--------------------+-------+-------+-------+--------+-----------+--------+
+2026-06-05 05:18:38
+06/04 22:18:38 - mmengine - INFO - Epoch(test) [265/265]    aAcc: 88.9000  mIoU: 72.4500  mAcc: 85.4900  mDice: 82.9000  mFscore: 82.9000  mPrecision: 80.7800  mRecall: 85.4900  data_time: 0.026
+============================================================
+MODEL & INFERENCE PROFILE
+============================================================
+  Total parameters:     60,251,060 (60.25M)
+  Trainable parameters: 60,251,060 (60.25M)
+  FLOPs (256x256):      33.29 GFLOPs
+  Avg latency:          111.76 +/- 0.09 ms
+  Throughput:           286.3 imgs/sec
+  Peak GPU memory:      1787.2 MB
+
+  Report saved to /content/outputs/mambavision_s_upernet/test_report.json
+
+
+06/04 16:18:39 - mmengine - INFO - Load checkpoint from outputs/mambavision_b_upernet/best.ckpt
+06/04 16:19:09 - mmengine - INFO - per class results:
+06/04 16:19:09 - mmengine - INFO -
++--------------------+-------+-------+-------+--------+-----------+--------+
+2026-06-04 23:19:09
+|       Class        |  IoU  |  Acc  |  Dice | Fscore | Precision | Recall |
+2026-06-04 23:19:09
++--------------------+-------+-------+-------+--------+-----------+--------+
+2026-06-04 23:19:09
+| impervious_surface | 84.93 | 89.83 | 91.85 | 91.85  |   93.96   | 89.83  |
+2026-06-04 23:19:09
+|      building      | 91.78 | 94.79 | 95.72 | 95.72  |   96.66   | 94.79  |
+2026-06-04 23:19:09
+|   low_vegetation   | 65.77 | 82.56 | 79.35 | 79.35  |   76.38   | 82.56  |
+2026-06-04 23:19:09
+|        tree        | 72.93 | 85.05 | 84.35 | 84.35  |   83.65   | 85.05  |
+2026-06-04 23:19:09
+|        car         |  78.7 | 97.03 | 88.08 | 88.08  |   80.64   | 97.03  |
+2026-06-04 23:19:09
+|      clutter       | 39.71 | 60.65 | 56.84 | 56.84  |   53.49   | 60.65  |
+2026-06-04 23:19:09
++--------------------+-------+-------+-------+--------+-----------+--------+
+2026-06-04 23:19:09
+06/04 16:19:09 - mmengine - INFO - Epoch(test) [265/265]    aAcc: 89.0900  mIoU: 72.3000  mAcc: 84.9900  mDice: 82.7000  mFscore: 82.7000  mPrecision: 80.8000  mRecall: 84.9900  data_time: 0.0073  time: 0.1140
+============================================================
+MODEL & INFERENCE PROFILE
+============================================================
+  Total parameters:     108,999,988 (109.00M)
+  Trainable parameters: 108,999,988 (109.00M)
+  FLOPs (256x256):      55.79 GFLOPs
+  Avg latency:          88.7 +/- 0.05 ms
+  Throughput:           360.8 imgs/sec
+  Peak GPU memory:      2001.7 MB
+
+  Report saved to /content/outputs/mambavision_b_upernet/test_report.json
+
+
+06/04 16:36:58 - mmengine - INFO - Load checkpoint from outputs/vmamba_s_upernet/best.ckpt
+06/04 16:37:40 - mmengine - INFO - per class results:
+06/04 16:37:40 - mmengine - INFO -
++--------------------+-------+-------+-------+--------+-----------+--------+
+2026-06-04 23:37:40
+|       Class        |  IoU  |  Acc  |  Dice | Fscore | Precision | Recall |
+2026-06-04 23:37:40
++--------------------+-------+-------+-------+--------+-----------+--------+
+2026-06-04 23:37:40
+| impervious_surface | 85.06 | 89.79 | 91.93 | 91.93  |   94.17   | 89.79  |
+2026-06-04 23:37:40
+|      building      | 91.64 | 94.46 | 95.64 | 95.64  |   96.85   | 94.46  |
+2026-06-04 23:37:40
+|   low_vegetation   | 66.79 | 82.32 | 80.09 | 80.09  |   77.98   | 82.32  |
+2026-06-04 23:37:40
+|        tree        |  73.5 | 86.62 | 84.73 | 84.73  |   82.91   | 86.62  |
+2026-06-04 23:37:40
+|        car         | 79.12 | 97.04 | 88.35 | 88.35  |   81.08   | 97.04  |
+2026-06-04 23:37:40
+|      clutter       | 40.63 | 64.77 | 57.79 | 57.79  |   52.16   | 64.77  |
+2026-06-04 23:37:40
++--------------------+-------+-------+-------+--------+-----------+--------+
+06/04 16:37:40 - mmengine - INFO - Epoch(test) [265/265]    aAcc: 89.2400  mIoU: 72.7900  mAcc: 85.8300  mDice: 83.0900  mFscore: 83.0900  mPrecision: 80.8600  mRecall: 85.8300  data_time: 0.0071  time: 0.1604
+============================================================
+MODEL & INFERENCE PROFILE
+============================================================
+  Total parameters:     59,490,572 (59.49M)
+  Trainable parameters: 59,490,572 (59.49M)
+  FLOPs (256x256):      24.48 GFLOPs
+  Avg latency:          59.14 +/- 0.05 ms
+  Throughput:           541.0 imgs/sec
+  Peak GPU memory:      2058.1 MB
+
+  Report saved to /content/outputs/vmamba_s_upernet/test_report.json
+
+
+06/04 15:41:58 - mmengine - INFO - Load checkpoint from outputs/vmamba_b_upernet/best.ckpt
+06/04 15:42:44 - mmengine - INFO - per class results:
+06/04 15:42:44 - mmengine - INFO -
++--------------------+-------+-------+-------+--------+-----------+--------+
+|       Class        |  IoU  |  Acc  |  Dice | Fscore | Precision | Recall |
++--------------------+-------+-------+-------+--------+-----------+--------+
+| impervious_surface |  84.8 | 88.99 | 91.77 | 91.77  |   94.74   | 88.99  |
+|      building      | 92.01 | 95.22 | 95.84 | 95.84  |   96.47   | 95.22  |
+|   low_vegetation   | 67.19 | 82.72 | 80.37 | 80.37  |   78.15   | 82.72  |
+|        tree        | 73.19 | 86.01 | 84.52 | 84.52  |   83.08   | 86.01  |
+|        car         | 79.48 | 97.31 | 88.57 | 88.57  |   81.26   | 97.31  |
+|      clutter       | 38.89 | 65.18 |  56.0 |  56.0  |   49.08   | 65.18  |
++--------------------+-------+-------+-------+--------+-----------+--------+
+06/04 15:42:44 - mmengine - INFO - Epoch(test) [265/265]    aAcc: 89.1800  mIoU: 72.5900  mAcc: 85.9100  mDice: 82.8500  mFscore: 82.8500  mPrecision: 80.4600  mRecall: 85.9100  data_time: 0.0075  time: 0.1740
+============================================================
+MODEL & INFERENCE PROFILE
+============================================================
+  Total parameters:     98,849,292 (98.85M)
+  Trainable parameters: 98,849,292 (98.85M)
+  FLOPs (256x256):      33.19 GFLOPs
+  Avg latency:          71.62 +/- 0.04 ms
+  Throughput:           446.8 imgs/sec
+  Peak GPU memory:      2764.1 MB
+
+  Report saved to /content/outputs/vmamba_b_upernet/test_report.json
+
+
