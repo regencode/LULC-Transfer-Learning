@@ -55,14 +55,10 @@ class ConvNeXtBackbone(BaseModule):
 
     def _load_pretrained(self, path):
         if not Path(path).is_file():
-            raise FileNotFoundError(
-                f"Pretrained weights not found: {path}. "
-                f"Download with: "
-                f"python -c \"import timm; timm.create_model('{self.timm_name}', pretrained=True)\""
-            )
-        state_dict = torch.load(path, map_location="cpu")
-        if "state_dict" in state_dict:
-            state_dict = state_dict["state_dict"]
+            m = timm.create_model(self.timm_name, pretrained=True)
+            torch.save(m.state_dict(), path)
+            del m
+        state_dict = torch.load(path, map_location="cpu", weights_only=True)
         self.model.load_state_dict(state_dict, strict=False)
 
     def forward(self, x):
