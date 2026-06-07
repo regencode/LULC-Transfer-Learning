@@ -39,12 +39,12 @@ class ConvNeXtBackbone(BaseModule):
                 f"Available: {list(CONVNEXT_VARIANTS.keys())}"
             )
 
-        timm_name = CONVNEXT_VARIANTS[variant]["timm_name"]
+        self.timm_name = CONVNEXT_VARIANTS[variant]["timm_name"]
         self._out_channels = CONVNEXT_VARIANTS[variant]["channels"]
         self.out_indices = (0, 1, 2, 3)
 
         self.model = timm.create_model(
-            timm_name,
+            self.timm_name,
             pretrained=False,
             features_only=True,
             out_indices=(0, 1, 2, 3),
@@ -58,7 +58,7 @@ class ConvNeXtBackbone(BaseModule):
             raise FileNotFoundError(
                 f"Pretrained weights not found: {path}. "
                 f"Download with: "
-                f"python -c \"import timm; timm.create_model('{timm_name}', pretrained=True)\""
+                f"python -c \"import timm; timm.create_model('{self.timm_name}', pretrained=True)\""
             )
         state_dict = torch.load(path, map_location="cpu")
         if "state_dict" in state_dict:

@@ -51,6 +51,7 @@ def parse_args():
 
 BACKBONE_NAMES = {
     "ResNetV1c": lambda bb: f"resnet{bb.depth}",
+    "ConvNeXtBackbone": lambda bb: bb.variant.replace("convnext_", "convnext"),
     "VMambaBackbone": lambda bb: bb.variant.replace("vmamba_", "vmamba_").replace("small", "s").replace("base", "b"),
     "MambaVisionBackbone": lambda bb: bb.variant,
 }
