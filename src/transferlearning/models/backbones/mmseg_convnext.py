@@ -53,13 +53,26 @@ class ConvNeXtBackbone(BaseModule):
         if pretrained:
             self._load_pretrained(pretrained)
 
+    @staticmethod
+    def _remap_state_dict(state_dict):
+        remapped = {}
+        for key, value in state_dict.items():
+            if key.startswith(("head.", "head_norm.")):
+                continue
+            new_key = key.replace("stem.0", "stem_0").replace("stem.1", "stem_1")
+            for i in range(4):
+                new_key = new_key.replace(f"stages.{i}.", f"stages_{i}.")
+            remapped[new_key] = value
+        return remapped
+
     def _load_pretrained(self, path):
         if not Path(path).is_file():
             m = timm.create_model(self.timm_name, pretrained=True)
             torch.save(m.state_dict(), path)
             del m
         state_dict = torch.load(path, map_location="cpu", weights_only=True)
-        self.model.load_state_dict(state_dict, strict=False)
+        state_dict = self._remap_state_dict(state_dict)
+        self.model.load_state_dict(state_dict, strict=True)
 
     def forward(self, x):
         features = self.model(x)
