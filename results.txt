@@ -187,4 +187,175 @@ MODEL & INFERENCE PROFILE
 
   Report saved to /content/outputs/vmamba_b_upernet/test_report.json
 
+06/09 03:29:58 - mmengine - INFO - Load checkpoint from outputs/convnext_s_upernet/best.ckpt
+06/09 03:31:42 - mmengine - INFO - per class results:
+06/09 03:31:42 - mmengine - INFO -
++--------------------+-------+-------+-------+--------+-----------+--------+
+|       Class        |  IoU  |  Acc  |  Dice | Fscore | Precision | Recall |
++--------------------+-------+-------+-------+--------+-----------+--------+
+| impervious_surface |  84.7 | 89.56 | 91.71 | 91.71  |   93.97   | 89.56  |
+|      building      | 91.17 | 94.25 | 95.38 | 95.38  |   96.54   | 94.25  |
+|   low_vegetation   |  66.0 | 84.32 | 79.52 | 79.52  |   75.23   | 84.32  |
+|        tree        | 72.64 | 83.99 | 84.15 | 84.15  |   84.31   | 83.99  |
+|        car         | 81.66 |  95.6 |  89.9 |  89.9  |   84.85   |  95.6  |
+|      clutter       | 38.55 | 60.51 | 55.65 | 55.65  |    51.5   | 60.51  |
++--------------------+-------+-------+-------+--------+-----------+--------+
+06/09 03:31:42 - mmengine - INFO - Epoch(test) [265/265]    aAcc: 88.9100  mIoU: 72.4500  mAcc: 84.7100  mDice: 82.7200  mFscore: 82.7200  mPrecision: 81.0700  mRecall: 84.7100  data_time: 0.0266  time: 0.3943
+  Synced visualizations to wandb
 
+06/11 07:39:02 - mmengine - INFO - Load checkpoint from outputs/convnext_b_upernet/best.ckpt
+06/11 07:40:24 - mmengine - INFO - per class results:
+06/11 07:40:24 - mmengine - INFO -
++--------------------+-------+-------+-------+--------+-----------+--------+
+|       Class        |  IoU  |  Acc  |  Dice | Fscore | Precision | Recall |
++--------------------+-------+-------+-------+--------+-----------+--------+
+| impervious_surface | 84.49 | 89.56 | 91.59 | 91.59  |   93.72   | 89.56  |
+|      building      | 91.12 | 94.54 | 95.35 | 95.35  |   96.18   | 94.54  |
+|   low_vegetation   | 66.45 |  83.6 | 79.84 | 79.84  |   76.41   |  83.6  |
+|        tree        | 72.89 |  84.4 | 84.32 | 84.32  |   84.24   |  84.4  |
+|        car         |  82.4 | 96.05 | 90.35 | 90.35  |   85.29   | 96.05  |
+|      clutter       | 38.08 | 60.15 | 55.16 | 55.16  |   50.93   | 60.15  |
++--------------------+-------+-------+-------+--------+-----------+--------+
+06/11 07:40:24 - mmengine - INFO - Epoch(test) [265/265]    aAcc: 88.9500  mIoU: 72.5700  mAcc: 84.7200  mDice: 82.7700  mFscore: 82.7700  mPrecision: 81.1300  mRecall: 84.7200  data_time: 0.0268  time: 0.3075
+  Synced visualizations to wandb
+
+============================================================
+MODEL & INFERENCE PROFILE
+============================================================
+  Total parameters:     98,879,116 (98.88M)
+  Trainable parameters: 98,879,116 (98.88M)
+  FLOPs (256x256):      33.51 GFLOPs
+  Avg latency:          100.45 +/- 0.18 ms
+  Throughput:           318.6 imgs/sec
+  Peak GPU memory:      1969.6 MB
+
+  Report saved to /content/outputs/convnext_b_upernet/test_report.json
+
+06/05 22:06:38 - mmengine - INFO - Load checkpoint from outputs/resnet50_deeplabv3plus/best.ckpt
+06/05 22:08:11 - mmengine - INFO - per class results:
+06/05 22:08:11 - mmengine - INFO -
++--------------------+-------+-------+-------+--------+-----------+--------+
+|       Class        |  IoU  |  Acc  |  Dice | Fscore | Precision | Recall |
++--------------------+-------+-------+-------+--------+-----------+--------+
+| impervious_surface | 83.87 | 89.64 | 91.23 | 91.23  |   92.87   | 89.64  |
+|      building      | 90.98 | 93.62 | 95.27 | 95.27  |   96.99   | 93.62  |
+|   low_vegetation   | 64.45 | 81.49 | 78.38 | 78.38  |    75.5   | 81.49  |
+|        tree        | 71.78 | 84.01 | 83.57 | 83.57  |   83.14   | 84.01  |
+|        car         | 78.41 |  96.1 |  87.9 |  87.9  |   80.99   |  96.1  |
+|      clutter       | 36.87 | 59.81 | 53.87 | 53.87  |   49.01   | 59.81  |
++--------------------+-------+-------+-------+--------+-----------+--------+
+06/05 22:08:11 - mmengine - INFO - Epoch(test) [265/265]    aAcc: 88.3500  mIoU: 71.0600  mAcc: 84.1100  mDice: 81.7100  mFscore: 81.7100  mPrecision: 79.7500  mRecall: 84.1100  data_time: 0.0258  time: 0.3505
+  Synced visualizations to wandb
+
+06/05 22:52:05 - mmengine - INFO - Load checkpoint from outputs/resnet101_deeplabv3plus/best.ckpt
+06/05 22:53:47 - mmengine - INFO - per class results:
+06/05 22:53:47 - mmengine - INFO -
++--------------------+-------+-------+-------+--------+-----------+--------+
+|       Class        |  IoU  |  Acc  |  Dice | Fscore | Precision | Recall |
++--------------------+-------+-------+-------+--------+-----------+--------+
+| impervious_surface | 83.85 | 89.18 | 91.22 | 91.22  |   93.35   | 89.18  |
+|      building      | 91.36 | 94.15 | 95.49 | 95.49  |   96.87   | 94.15  |
+|   low_vegetation   | 64.31 | 81.87 | 78.28 | 78.28  |   74.99   | 81.87  |
+|        tree        | 72.01 | 84.06 | 83.72 | 83.72  |   83.39   | 84.06  |
+|        car         | 77.54 | 96.26 | 87.35 | 87.35  |   79.96   | 96.26  |
+|      clutter       | 39.07 | 62.22 | 56.19 | 56.19  |   51.23   | 62.22  |
++--------------------+-------+-------+-------+--------+-----------+--------+
+06/05 22:53:47 - mmengine - INFO - Epoch(test) [265/265]    aAcc: 88.4600  mIoU: 71.3600  mAcc: 84.6200  mDice: 82.0400  mFscore: 82.0400  mPrecision: 79.9600  mRecall: 84.6200  data_time: 0.0259  time: 0.3829
+  Synced visualizations to wandb
+  
+06/05 18:58:21 - mmengine - INFO - Load checkpoint from outputs/vmamba_s_deeplabv3plus/best.ckpt
+06/05 18:59:36 - mmengine - INFO - per class results:
+06/05 18:59:36 - mmengine - INFO -
++--------------------+-------+-------+-------+--------+-----------+--------+
+|       Class        |  IoU  |  Acc  |  Dice | Fscore | Precision | Recall |
++--------------------+-------+-------+-------+--------+-----------+--------+
+| impervious_surface | 84.44 | 89.54 | 91.57 | 91.57  |   93.69   | 89.54  |
+|      building      | 91.41 | 94.85 | 95.51 | 95.51  |   96.18   | 94.85  |
+|   low_vegetation   | 66.33 | 79.39 | 79.76 | 79.76  |   80.13   | 79.39  |
+|        tree        | 73.05 | 87.17 | 84.43 | 84.43  |   81.86   | 87.17  |
+|        car         | 78.06 | 97.11 | 87.68 | 87.68  |   79.92   | 97.11  |
+|      clutter       | 39.19 | 65.28 | 56.31 | 56.31  |   49.51   | 65.28  |
++--------------------+-------+-------+-------+--------+-----------+--------+
+06/05 18:59:36 - mmengine - INFO - Epoch(test) [265/265]    aAcc: 88.9300  mIoU: 72.0800  mAcc: 85.5600  mDice: 82.5400  mFscore: 82.5400  mPrecision: 80.2100  mRecall: 85.5600  data_time: 0.0258  time: 0.2837
+  Synced visualizations to wandb
+
+06/05 19:57:01 - mmengine - INFO - Load checkpoint from outputs/vmamba_b_deeplabv3plus/best.ckpt
+06/05 19:58:46 - mmengine - INFO - per class results:
+06/05 19:58:46 - mmengine - INFO -
++--------------------+-------+-------+-------+--------+-----------+--------+
+|       Class        |  IoU  |  Acc  |  Dice | Fscore | Precision | Recall |
++--------------------+-------+-------+-------+--------+-----------+--------+
+| impervious_surface | 84.28 | 88.51 | 91.47 | 91.47  |   94.63   | 88.51  |
+|      building      | 91.68 | 94.94 | 95.66 | 95.66  |    96.4   | 94.94  |
+|   low_vegetation   | 66.97 | 83.21 | 80.22 | 80.22  |   77.43   | 83.21  |
+|        tree        | 72.98 | 85.48 | 84.38 | 84.38  |   83.32   | 85.48  |
+|        car         |  77.2 | 97.81 | 87.13 | 87.13  |   78.56   | 97.81  |
+|      clutter       | 39.59 | 65.81 | 56.72 | 56.72  |   49.83   | 65.81  |
++--------------------+-------+-------+-------+--------+-----------+--------+
+06/05 19:58:46 - mmengine - INFO - Epoch(test) [265/265]    aAcc: 88.9400  mIoU: 72.1200  mAcc: 85.9600  mDice: 82.6000  mFscore: 82.6000  mPrecision: 80.0300  mRecall: 85.9600  data_time: 0.0267  time: 0.3973
+  Synced visualizations to wandb
+
+06/06 01:02:17 - mmengine - INFO - Load checkpoint from outputs/mambavision_s_deeplabv3plus/best.ckpt
+06/06 01:03:59 - mmengine - INFO - per class results:
+06/06 01:03:59 - mmengine - INFO -
++--------------------+-------+-------+-------+--------+-----------+--------+
+|       Class        |  IoU  |  Acc  |  Dice | Fscore | Precision | Recall |
++--------------------+-------+-------+-------+--------+-----------+--------+
+| impervious_surface | 84.21 | 89.09 | 91.43 | 91.43  |   93.88   | 89.09  |
+|      building      | 91.43 | 94.54 | 95.53 | 95.53  |   96.54   | 94.54  |
+|   low_vegetation   | 65.42 | 83.31 |  79.1 |  79.1  |   75.28   | 83.31  |
+|        tree        |  72.2 | 83.22 | 83.85 | 83.85  |    84.5   | 83.22  |
+|        car         | 77.59 | 97.08 | 87.38 | 87.38  |   79.44   | 97.08  |
+|      clutter       |  38.9 | 62.29 | 56.01 | 56.01  |   50.88   | 62.29  |
++--------------------+-------+-------+-------+--------+-----------+--------+
+06/06 01:04:00 - mmengine - INFO - Epoch(test) [265/265]    aAcc: 88.6800  mIoU: 71.6200  mAcc: 84.9200  mDice: 82.2200  mFscore: 82.2200  mPrecision: 80.0900  mRecall: 84.9200  data_time: 0.0262  time: 0.3848
+  Synced visualizations to wandb
+
+06/06 01:14:01 - mmengine - INFO - Load checkpoint from outputs/mambavision_b_deeplabv3plus/best.ckpt
+06/06 01:15:25 - mmengine - INFO - per class results:
+06/06 01:15:25 - mmengine - INFO -
++--------------------+-------+-------+-------+--------+-----------+--------+
+|       Class        |  IoU  |  Acc  |  Dice | Fscore | Precision | Recall |
++--------------------+-------+-------+-------+--------+-----------+--------+
+| impervious_surface | 84.93 | 90.94 | 91.85 | 91.85  |   92.78   | 90.94  |
+|      building      | 91.72 | 94.68 | 95.68 | 95.68  |    96.7   | 94.68  |
+|   low_vegetation   | 66.22 | 81.28 | 79.68 | 79.68  |   78.14   | 81.28  |
+|        tree        | 72.88 | 84.87 | 84.32 | 84.32  |   83.77   | 84.87  |
+|        car         | 80.26 | 96.71 | 89.05 | 89.05  |   82.51   | 96.71  |
+|      clutter       | 39.21 | 58.42 | 56.33 | 56.33  |   54.39   | 58.42  |
++--------------------+-------+-------+-------+--------+-----------+--------+
+06/06 01:15:25 - mmengine - INFO - Epoch(test) [265/265]    aAcc: 89.2100  mIoU: 72.5400  mAcc: 84.4800  mDice: 82.8200  mFscore: 82.8200  mPrecision: 81.3800  mRecall: 84.4800  data_time: 0.0260  time: 0.3177
+  Synced visualizations to wandb
+
+06/09 05:15:55 - mmengine - INFO - Load checkpoint from outputs/convnext_s_deeplabv3plus/best.ckpt
+06/09 05:17:40 - mmengine - INFO - per class results:
+06/09 05:17:40 - mmengine - INFO -
++--------------------+-------+-------+-------+--------+-----------+--------+
+|       Class        |  IoU  |  Acc  |  Dice | Fscore | Precision | Recall |
++--------------------+-------+-------+-------+--------+-----------+--------+
+| impervious_surface | 84.61 | 89.89 | 91.67 | 91.67  |   93.51   | 89.89  |
+|      building      | 90.65 | 93.71 |  95.1 |  95.1  |   96.52   | 93.71  |
+|   low_vegetation   | 65.85 | 83.56 | 79.41 | 79.41  |   75.64   | 83.56  |
+|        tree        | 72.65 | 84.09 | 84.16 | 84.16  |   84.23   | 84.09  |
+|        car         | 81.96 |  95.5 | 90.08 | 90.08  |   85.25   |  95.5  |
+|      clutter       | 38.06 | 60.64 | 55.13 | 55.13  |   50.54   | 60.64  |
++--------------------+-------+-------+-------+--------+-----------+--------+
+06/09 05:17:40 - mmengine - INFO - Epoch(test) [265/265]    aAcc: 88.7800  mIoU: 72.3000  mAcc: 84.5700  mDice: 82.5900  mFscore: 82.5900  mPrecision: 80.9500  mRecall: 84.5700  data_time: 0.0261  time: 0.3944
+  Synced visualizations to wandb
+
+
+06/09 05:43:14 - mmengine - INFO - Load checkpoint from outputs/convnext_b_deeplabv3plus/best.ckpt
+06/09 05:45:22 - mmengine - INFO - per class results:
+06/09 05:45:22 - mmengine - INFO -
++--------------------+-------+-------+-------+--------+-----------+--------+
+|       Class        |  IoU  |  Acc  |  Dice | Fscore | Precision | Recall |
++--------------------+-------+-------+-------+--------+-----------+--------+
+| impervious_surface | 84.68 | 90.18 |  91.7 |  91.7  |   93.28   | 90.18  |
+|      building      | 90.75 | 94.24 | 95.15 | 95.15  |   96.08   | 94.24  |
+|   low_vegetation   | 66.44 | 83.83 | 79.83 | 79.83  |   76.21   | 83.83  |
+|        tree        | 72.74 | 83.68 | 84.22 | 84.22  |   84.77   | 83.68  |
+|        car         |  81.5 | 95.48 | 89.81 | 89.81  |   84.77   | 95.48  |
+|      clutter       | 39.03 | 58.55 | 56.14 | 56.14  |   53.93   | 58.55  |
++--------------------+-------+-------+-------+--------+-----------+--------+
+06/09 05:45:22 - mmengine - INFO - Epoch(test) [265/265]    aAcc: 88.9800  mIoU: 72.5200  mAcc: 84.3200  mDice: 82.8100  mFscore: 82.8100  mPrecision: 81.5100  mRecall: 84.3200  data_time: 0.0268  time: 0.4834
+  Synced visualizations to wandb
