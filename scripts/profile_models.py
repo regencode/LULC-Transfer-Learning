@@ -235,29 +235,95 @@ def write_csv(results, path):
     print(f"\nResults saved to {path}")
 
 
+def profile_single(config_path, batch_size, num_warmup, num_iters, output_path):
+    result = profile_config(config_path, batch_size, num_warmup, num_iters)
+    tmp_path = output_path + ".tmp"
+    file_exists = os.path.exists(tmp_path)
+    fieldnames = list(result.keys())
+    with open(tmp_path, "a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        if not file_exists:
+            writer.writeheader()
+        writer.writerow(result)
+    return result
+
+
 def main():
     args = parse_args()
 
     if not torch.cuda.is_available():
         print("Warning: No GPU detected. Memory and throughput measurements will be unavailable.", file=sys.stderr)
 
-    results = []
-    failed = []
-
-    print(f"Profiling {len(args.configs)} model(s) ...\n")
-
-    for config_path in args.configs:
+    if len(args.configs) == 1:
+        results = []
+        failed = []
+        print(f"Profiling 1 model ...\n")
         try:
-            result = profile_config(config_path, args.batch_size, args.num_warmup, args.num_iters)
+            result = profile_config(args.configs[0], args.batch_size, args.num_warmup, args.num_iters)
             results.append(result)
         except Exception as e:
-            print(f"  FAILED: {os.path.basename(config_path)}: {e}", file=sys.stderr)
-            failed.append((config_path, str(e)))
+            print(f"  FAILED: {os.path.basename(args.configs[0])}: {e}", file=sys.stderr)
+            failed.append((args.configs[0], str(e)))
+
+        results.sort(key=lambda r: (r["backbone"], r["head"], r["aux"]))
+        print_table(results)
+        write_csv(results, args.output)
+
+        if failed:
+            print(f"\n{len(failed)} config(s) failed:", file=sys.stderr)
+            for path, err in failed:
+                print(f"  {os.path.basename(path)}: {err}", file=sys.stderr)
+        return
+
+    import subprocess
+
+    tmp_csv = args.output + ".tmp"
+    if os.path.exists(tmp_csv):
+        os.remove(tmp_csv)
+
+    print(f"Profiling {len(args.configs)} model(s) in isolated processes ...\n")
+
+    failed = []
+    for i, config_path in enumerate(args.configs):
+        print(f"[{i + 1}/{len(args.configs)}] {os.path.basename(config_path)}", end=" ", flush=True)
+        proc = subprocess.run(
+            [
+                sys.executable, __file__,
+                config_path,
+                "--batch-size", str(args.batch_size),
+                "--num-warmup", str(args.num_warmup),
+                "--num-iters", str(args.num_iters),
+                "--output", args.output,
+            ],
+            capture_output=True, text=True,
+        )
+        if proc.returncode == 0:
+            print("OK")
+        else:
+            err_msg = proc.stderr.strip().split("\n")[-1] if proc.stderr.strip() else "unknown error"
+            print(f"FAILED ({err_msg})")
+            failed.append((config_path, err_msg))
+
+    results = []
+    if os.path.exists(tmp_csv):
+        with open(tmp_csv, newline="") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                row["total_params"] = int(row["total_params"])
+                row["trainable_params"] = int(row["trainable_params"])
+                row["flops"] = int(row["flops"]) if row["flops"] != "None" else None
+                row["aux"] = row["aux"] == "True"
+                for key in ["avg_latency_ms", "std_latency_ms", "throughput_imgs_per_sec", "peak_gpu_memory_mb"]:
+                    row[key] = float(row[key]) if row[key] else None
+                results.append(row)
 
     results.sort(key=lambda r: (r["backbone"], r["head"], r["aux"]))
 
     print_table(results)
     write_csv(results, args.output)
+
+    if os.path.exists(tmp_csv):
+        os.remove(tmp_csv)
 
     if failed:
         print(f"\n{len(failed)} config(s) failed:", file=sys.stderr)
