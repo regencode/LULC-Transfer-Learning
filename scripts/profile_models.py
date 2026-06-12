@@ -255,24 +255,19 @@ def main():
         print("Warning: No GPU detected. Memory and throughput measurements will be unavailable.", file=sys.stderr)
 
     if len(args.configs) == 1:
-        results = []
-        failed = []
-        print(f"Profiling 1 model ...\n")
         try:
             result = profile_config(args.configs[0], args.batch_size, args.num_warmup, args.num_iters)
-            results.append(result)
+            tmp_path = args.output + ".tmp"
+            file_exists = os.path.exists(tmp_path)
+            fieldnames = list(result.keys())
+            with open(tmp_path, "a", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                if not file_exists:
+                    writer.writeheader()
+                writer.writerow(result)
         except Exception as e:
             print(f"  FAILED: {os.path.basename(args.configs[0])}: {e}", file=sys.stderr)
-            failed.append((args.configs[0], str(e)))
-
-        results.sort(key=lambda r: (r["backbone"], r["head"], r["aux"]))
-        print_table(results)
-        write_csv(results, args.output)
-
-        if failed:
-            print(f"\n{len(failed)} config(s) failed:", file=sys.stderr)
-            for path, err in failed:
-                print(f"  {os.path.basename(path)}: {err}", file=sys.stderr)
+            sys.exit(1)
         return
 
     import subprocess
