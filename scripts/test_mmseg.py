@@ -78,6 +78,10 @@ def parse_args():
     parser.add_argument("--full-report", action="store_true", help="Print full report: metrics + inference stats")
     parser.add_argument("--visualize", type=str, default=None, metavar="IMAGE_PATH",
                         help="Path to original Potsdam image (6000x6000) for prediction visualization")
+    parser.add_argument("--patch-size", type=int, default=512,
+                        help="Patch size for sliding-window inference and FLOPs measurement (default: 512)")
+    parser.add_argument("--stride", type=int, default=256,
+                        help="Stride for sliding-window inference (default: 256)")
     parser.add_argument("--cfg-options", nargs="+", action="append", default=[], help="Override config options")
     args = parser.parse_args()
 
@@ -103,7 +107,7 @@ def count_parameters(model):
     return total, trainable
 
 
-def measure_inference(model, dataloader, device, num_warmup=5, num_iters=50):
+def measure_inference(model, dataloader, device, patch_size=512, num_warmup=5, num_iters=50):
     model.eval()
     times = []
 
@@ -139,15 +143,15 @@ def measure_inference(model, dataloader, device, num_warmup=5, num_iters=50):
         "std_latency_ms": round(std_time * 1000, 2),
         "throughput_imgs_per_sec": round(throughput, 1),
         "peak_gpu_memory_mb": round(peak_mem, 1),
-        "input_resolution": "256x256",
+        "input_resolution": f"{patch_size}x{patch_size}",
         "batch_size": bs,
     }
 
 
-def measure_flops(model, config):
+def measure_flops(model, config, patch_size=512):
     try:
         device = next(model.parameters()).device
-        dummy_input = torch.randn(1, 3, 256, 256).to(device)
+        dummy_input = torch.randn(1, 3, patch_size, patch_size).to(device)
         fca = FlopCountAnalysis(model, dummy_input)
         fca.unsupported_ops_warnings(False)
         fca.uncalled_modules_warnings(False)
@@ -169,11 +173,11 @@ def format_flops(flops):
     return f"{flops:.0f} FLOPs"
 
 
-def visualize_prediction(runner, image_path, output_dir):
+def visualize_prediction(runner, image_path, output_dir, patch_size=512, stride=256):
     """Generate prediction visualization for a full Potsdam image (6000x6000).
 
-    Uses sliding window inference with logit averaging (patch=256, stride=128).
-    Pads to 6144x6144 (24*256) for even tiling, then crops back.
+    Uses sliding window inference with logit averaging.
+    Pads to next multiple of patch_size for even tiling, then crops back.
 
     Args:
         runner: mmseg Runner with loaded model.
@@ -183,6 +187,8 @@ def visualize_prediction(runner, image_path, output_dir):
             - image.png: original full-size image
             - label.png: original full-size label (ISPRS RGB colors)
             - pred.png: model prediction (ISPRS RGB colors)
+        patch_size: Patch size for sliding-window inference (default: 512).
+        stride: Stride for sliding-window inference (default: 256).
 
     Label path is derived from image_path by replacing
     ``images/`` with ``labels/`` and ``_RGB.tif`` with ``_label.tif``.
@@ -212,12 +218,10 @@ def visualize_prediction(runner, image_path, output_dir):
 
     img_tensor = torch.from_numpy(img).permute(2, 0, 1).float().unsqueeze(0) # [1, C, H, W]
     img_tensor = (img_tensor - IMAGENET_MEAN) / IMAGENET_STD
-    pad_size = int(np.ceil(orig_h / 256)) * 256
+    pad_size = int(np.ceil(orig_h / patch_size)) * patch_size
     _, _, H, W = img_tensor.shape
     img_padded = F.pad(img_tensor, (0, pad_size - W, 0, pad_size - H), mode='reflect')
 
-    patch_size = 256
-    stride = 128
     num_classes = 6
     batch_size = 8
 
@@ -338,10 +342,10 @@ def main():
         print(f"  Total parameters:     {total_params:,} ({total_params / 1e6:.2f}M)")
         print(f"  Trainable parameters: {trainable_params:,} ({trainable_params / 1e6:.2f}M)")
 
-        flops = measure_flops(model, cfg)
-        print(f"  FLOPs (256x256):      {format_flops(flops)}")
+        flops = measure_flops(model, cfg, patch_size=args.patch_size)
+        print(f"  FLOPs ({args.patch_size}x{args.patch_size}):      {format_flops(flops)}")
 
-        inf_stats = measure_inference(model, runner.test_dataloader, device)
+        inf_stats = measure_inference(model, runner.test_dataloader, device, patch_size=args.patch_size)
         if inf_stats:
             print(f"  Avg latency:          {inf_stats['avg_latency_ms']} +/- {inf_stats['std_latency_ms']} ms")
             print(f"  Throughput:           {inf_stats['throughput_imgs_per_sec']} imgs/sec")
@@ -366,7 +370,8 @@ def main():
         print("VISUALIZATION")
         print("=" * 60)
         vis_dir = os.path.join(runner.work_dir, "visualizations")
-        visualize_prediction(runner, args.visualize, vis_dir)
+        visualize_prediction(runner, args.visualize, vis_dir,
+                             patch_size=args.patch_size, stride=args.stride)
 
         if _wandb_run_id is not None:
             import wandb
