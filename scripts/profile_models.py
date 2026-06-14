@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
-"""Profile model architectures: parameters, FLOPs, inference throughput, and GPU memory.
+"""Profile model architectures: parameters, FLOPs, inference latency, and GPU memory.
 
 Does not require trained checkpoints — builds models with random weights.
+Uses synthetic inputs at the given patch size with batch_size=1 for
+standard single-image profiling (latency in ms, FPS = 1/latency).
 
 Usage:
     python scripts/profile_models.py configs/mmseg/potsdam/*.py
 
-    python scripts/profile_models.py \\
-        configs/mmseg/potsdam/resnet50_deeplabv3plus_patch256_lr1e-4_100e.py \\
+    python scripts/profile_models.py \
+        configs/mmseg/potsdam/resnet50_deeplabv3plus_patch256_lr1e-4_100e.py \
         configs/mmseg/potsdam/resnet50_upernet_patch256_lr1e-4_100e.py
 
-    python scripts/profile_models.py configs/mmseg/potsdam/*.py \\
-        --batch-size 16 --num-iters 100 --output results.csv
+    python scripts/profile_models.py configs/mmseg/potsdam/*.py \
+        --patch-size 512 --num-iters 100 --output results.csv
 """
 
 import argparse
@@ -46,9 +48,10 @@ def parse_args():
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("configs", nargs="+", type=str, help="Config file paths")
-    parser.add_argument("--batch-size", type=int, default=1, help="Batch size for inference measurement")
-    parser.add_argument("--num-warmup", type=int, default=5, help="Number of warmup iterations")
-    parser.add_argument("--num-iters", type=int, default=50, help="Number of timed inference iterations")
+    parser.add_argument("--patch-size", type=int, default=512,
+                        help="Patch size for synthetic input (default: 512)")
+    parser.add_argument("--num-warmup", type=int, default=10, help="Number of warmup iterations")
+    parser.add_argument("--num-iters", type=int, default=100, help="Number of timed inference iterations")
     parser.add_argument("--output", type=str, default="profile_results.csv", help="Output CSV path")
     return parser.parse_args()
 
@@ -67,10 +70,10 @@ def count_parameters(model):
     return total, trainable
 
 
-def measure_flops(model):
+def measure_flops(model, patch_size=512):
     try:
         device = next(model.parameters()).device
-        dummy_input = torch.randn(1, 3, 256, 256).to(device)
+        dummy_input = torch.randn(1, 3, patch_size, patch_size).to(device)
         fca = FlopCountAnalysis(model, dummy_input)
         fca.unsupported_ops_warnings(False)
         fca.uncalled_modules_warnings(False)
@@ -79,44 +82,48 @@ def measure_flops(model):
         return None
 
 
-def measure_inference(model, dataloader, device, num_warmup=5, num_iters=50):
+def measure_inference(model, patch_size=512, num_warmup=10, num_iters=100):
+    """Measure single-image inference latency and FPS using synthetic input.
+
+    Creates a random tensor [1, 3, patch_size, patch_size], passes it through
+    the model's data preprocessor, then times model.predict at batch_size=1.
+
+    Returns dict with latency (ms), FPS (1/latency), and peak GPU memory.
+    """
     model.eval()
+    dummy_input = torch.randn(1, 3, patch_size, patch_size)
+    data_batch = model.data_preprocessor(
+        {"inputs": dummy_input, "data_samples": None}, False
+    )
     times = []
 
-    with torch.no_grad():
-        for i, data_batch in enumerate(dataloader):
-            data_batch = model.data_preprocessor(data_batch, False)
-            if i < num_warmup:
-                _ = model(**data_batch, mode='predict')
-                torch.cuda.synchronize()
-                continue
+    torch.cuda.reset_peak_memory_stats()
 
-            torch.cuda.reset_peak_memory_stats()
+    with torch.no_grad():
+        for i in range(num_warmup + num_iters):
+            torch.cuda.synchronize()
             start = time.perf_counter()
-            _ = model(**data_batch, mode='predict')
+            _ = model(**data_batch, mode="predict")
             torch.cuda.synchronize()
             elapsed = time.perf_counter() - start
-            times.append(elapsed)
 
-            if i >= num_warmup + num_iters:
-                break
+            if i >= num_warmup:
+                times.append(elapsed)
 
     if not times:
         return {}
 
-    bs = dataloader.batch_size
     avg_time = np.mean(times)
     std_time = np.std(times)
-    throughput = bs / avg_time
+    fps = 1.0 / avg_time
     peak_mem = torch.cuda.max_memory_allocated() / (1024 ** 2)
 
     return {
         "avg_latency_ms": round(avg_time * 1000, 2),
         "std_latency_ms": round(std_time * 1000, 2),
-        "throughput_imgs_per_sec": round(throughput, 1),
+        "fps": round(fps, 1),
         "peak_gpu_memory_mb": round(peak_mem, 1),
-        "input_resolution": "256x256",
-        "batch_size": bs,
+        "input_resolution": f"{patch_size}x{patch_size}",
     }
 
 
@@ -140,7 +147,7 @@ def format_params(params):
     return str(params)
 
 
-def profile_config(config_path, batch_size, num_warmup, num_iters):
+def profile_config(config_path, patch_size, num_warmup, num_iters):
     cfg = Config.fromfile(config_path)
 
     cfg.load_from = None
@@ -158,9 +165,6 @@ def profile_config(config_path, batch_size, num_warmup, num_iters):
             vb.init_kwargs = dict(project="lulc-segmentation", config=dict(mode="profile"))
             break
 
-    if batch_size != cfg.test_dataloader.batch_size:
-        cfg.test_dataloader.batch_size = batch_size
-
     backbone_name, head_name, has_aux = parse_model_info(cfg)
     model_label = f"{backbone_name}-{head_name}-aux{has_aux}"
 
@@ -171,13 +175,12 @@ def profile_config(config_path, batch_size, num_warmup, num_iters):
     if hasattr(model, 'module'):
         model = model.module
     model.eval()
-    device = next(model.parameters()).device
 
     total_params, trainable_params = count_parameters(model)
-    flops = measure_flops(model)
+    flops = measure_flops(model, patch_size=patch_size)
 
-    torch.cuda.reset_peak_memory_stats()
-    inf_stats = measure_inference(model, runner.test_dataloader, device, num_warmup, num_iters)
+    inf_stats = measure_inference(model, patch_size=patch_size,
+                                  num_warmup=num_warmup, num_iters=num_iters)
 
     peak_mem = inf_stats.get("peak_gpu_memory_mb", 0) if inf_stats else 0
 
@@ -197,9 +200,10 @@ def profile_config(config_path, batch_size, num_warmup, num_iters):
         "trainable_params": trainable_params,
         "flops": flops,
         "flops_human": format_flops(flops),
+        "patch_size": patch_size,
         "avg_latency_ms": inf_stats.get("avg_latency_ms"),
         "std_latency_ms": inf_stats.get("std_latency_ms"),
-        "throughput_imgs_per_sec": inf_stats.get("throughput_imgs_per_sec"),
+        "fps": inf_stats.get("fps"),
         "peak_gpu_memory_mb": inf_stats.get("peak_gpu_memory_mb"),
     }
 
@@ -211,16 +215,19 @@ def profile_config(config_path, batch_size, num_warmup, num_iters):
 
 
 def print_table(results):
-    hdr = f"{'Backbone':<20} {'Head':<15} {'Aux':<5} {'Params':<12} {'FLOPs':<12} {'Latency(ms)':<14} {'Throughput':<14} {'GPU Mem(MB)':<12}"
+    hdr = (
+        f"{'Backbone':<20} {'Head':<15} {'Aux':<5} {'Params':<12} {'FLOPs':<12} "
+        f"{'Latency(ms)':<16} {'FPS':<10} {'GPU Mem(MB)':<12}"
+    )
     sep = "-" * len(hdr)
     print(f"\n{sep}\n{hdr}\n{sep}")
     for r in results:
         p = format_params(r["total_params"])
         f = format_flops(r["flops"])
         lat = f"{r['avg_latency_ms']:.2f} +/- {r['std_latency_ms']:.2f}" if r["avg_latency_ms"] else "N/A"
-        tp = f"{r['throughput_imgs_per_sec']:.1f}" if r["throughput_imgs_per_sec"] else "N/A"
+        fps = f"{r['fps']:.1f}" if r["fps"] else "N/A"
         mem = f"{r['peak_gpu_memory_mb']:.1f}" if r["peak_gpu_memory_mb"] else "N/A"
-        print(f"{r['backbone']:<20} {r['head']:<15} {str(r['aux']):<5} {p:<12} {f:<12} {lat:<14} {tp:<14} {mem:<12}")
+        print(f"{r['backbone']:<20} {r['head']:<15} {str(r['aux']):<5} {p:<12} {f:<12} {lat:<16} {fps:<10} {mem:<12}")
     print(sep)
 
 
@@ -235,19 +242,6 @@ def write_csv(results, path):
     print(f"\nResults saved to {path}")
 
 
-def profile_single(config_path, batch_size, num_warmup, num_iters, output_path):
-    result = profile_config(config_path, batch_size, num_warmup, num_iters)
-    tmp_path = output_path + ".tmp"
-    file_exists = os.path.exists(tmp_path)
-    fieldnames = list(result.keys())
-    with open(tmp_path, "a", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        if not file_exists:
-            writer.writeheader()
-        writer.writerow(result)
-    return result
-
-
 def main():
     args = parse_args()
 
@@ -256,7 +250,11 @@ def main():
 
     if len(args.configs) == 1:
         try:
-            result = profile_config(args.configs[0], args.batch_size, args.num_warmup, args.num_iters)
+            result = profile_config(
+                args.configs[0],
+                patch_size=args.patch_size,
+                num_warmup=args.num_warmup, num_iters=args.num_iters,
+            )
             tmp_path = args.output + ".tmp"
             file_exists = os.path.exists(tmp_path)
             fieldnames = list(result.keys())
@@ -285,7 +283,7 @@ def main():
             [
                 sys.executable, __file__,
                 config_path,
-                "--batch-size", str(args.batch_size),
+                "--patch-size", str(args.patch_size),
                 "--num-warmup", str(args.num_warmup),
                 "--num-iters", str(args.num_iters),
                 "--output", args.output,
@@ -308,7 +306,7 @@ def main():
                 row["trainable_params"] = int(row["trainable_params"])
                 row["flops"] = int(row["flops"]) if row["flops"] != "None" else None
                 row["aux"] = row["aux"] == "True"
-                for key in ["avg_latency_ms", "std_latency_ms", "throughput_imgs_per_sec", "peak_gpu_memory_mb"]:
+                for key in ["avg_latency_ms", "std_latency_ms", "fps", "peak_gpu_memory_mb"]:
                     row[key] = float(row[key]) if row[key] else None
                 results.append(row)
 
