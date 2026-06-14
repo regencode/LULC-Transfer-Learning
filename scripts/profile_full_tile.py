@@ -58,7 +58,7 @@ PATCH_CONFIGS = [
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Profile full-tile inference")
-    parser.add_argument("--configs", nargs="+", type=str, required=True,
+    parser.add_argument("--configs", nargs="+", type=str, required=False,
                         help="Config file paths (one per model)")
     parser.add_argument("--image", type=str, required=True,
                         help="Path to a Potsdam tile image (6000x6000)")
@@ -279,6 +279,9 @@ def main():
         with open(args.output, "w") as f:
             json.dump(results, f, indent=2)
         return
+
+    if not args.configs:
+        parser.error("--configs is required when not using --single-config")
 
     if not os.path.exists(args.image):
         print(f"Error: Image not found: {args.image}", file=sys.stderr)
