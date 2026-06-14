@@ -6,6 +6,8 @@ two patch sizes (256x256 and 512x512) and measures total inference time,
 peak GPU memory, number of patches, and effective throughput.
 
 Does not require trained checkpoints — builds models with random weights.
+Each model is profiled in an isolated subprocess to avoid mmengine/wandb
+config caching issues.
 
 Usage:
     python scripts/profile_full_tile.py \
@@ -21,6 +23,7 @@ Usage:
 import argparse
 import csv
 import gc
+import json
 import os
 import sys
 import time
@@ -67,6 +70,9 @@ def parse_args():
                         help="Number of timed full-tile passes (default: 3)")
     parser.add_argument("--output", type=str, default="profiling_full_tile.csv",
                         help="Output CSV path")
+    # Internal: when running as subprocess, profile a single config
+    parser.add_argument("--single-config", type=str, default=None,
+                        help=argparse.SUPPRESS)
     return parser.parse_args()
 
 
@@ -156,7 +162,7 @@ def run_sliding_window(model, img_tensor, orig_h, orig_w,
     return num_patches
 
 
-def profile_model_tile(config_path, image_path, batch_size, num_warmup, num_iters):
+def profile_single_config(config_path, image_path, batch_size, num_warmup, num_iters):
     print(f"\nBuilding model from {os.path.basename(config_path)} ...")
     model, model_label = build_model(config_path)
     device = next(model.parameters()).device
@@ -211,6 +217,50 @@ def profile_model_tile(config_path, image_path, batch_size, num_warmup, num_iter
     return results
 
 
+def run_subprocess(config_path, image_path, batch_size, num_warmup, num_iters, output_path):
+    proc = __import__('subprocess')
+    tmp_json = output_path + ".tmp.json"
+
+    cmd = [
+        sys.executable, __file__,
+        "--single-config", config_path,
+        "--image", image_path,
+        "--batch-size", str(batch_size),
+        "--num-warmup", str(num_warmup),
+        "--num-iters", str(num_iters),
+        "--output", tmp_json,
+    ]
+
+    print(f"  Profiling {os.path.basename(config_path)} ...", end=" ", flush=True)
+    result = proc.run(cmd, capture_output=True, text=True)
+
+    if result.returncode != 0:
+        err = result.stderr.strip().split("\n")[-1] if result.stderr.strip() else "unknown"
+        print(f"FAILED ({err})")
+        return []
+
+    print("OK")
+
+    with open(tmp_json) as f:
+        rows = json.load(f)
+    os.remove(tmp_json)
+    return rows
+
+
+def print_table(all_results):
+    hdr = (
+        f"{'Backbone':<30} {'PatchSize':>10} {'Stride':>7} {'Patches':>9} "
+        f"{'TileTime(s)':>12} {'PerPatch(ms)':>13} {'PeakMem(MB)':>12} {'MPx/s':>8}"
+    )
+    sep = "-" * len(hdr)
+    print(f"\n{sep}\n{hdr}\n{sep}")
+    for r in all_results:
+        print(f"{r['backbone']:<30} {r['patch_size']:>10} {r['stride']:>7} {r['num_patches']:>9} "
+              f"{r['tile_time_s']:>12.3f} {r['per_patch_ms']:>13.2f} {r['peak_gpu_mem_mb']:>12.0f} "
+              f"{r['megapixels_per_sec']:>8.1f}")
+    print(sep)
+
+
 def main():
     args = parse_args()
 
@@ -218,30 +268,37 @@ def main():
         print("Error: GPU required for full-tile profiling.", file=sys.stderr)
         sys.exit(1)
 
+    # Subprocess mode: profile a single config, write results as JSON
+    if args.single_config:
+        results = profile_single_config(
+            args.single_config, args.image,
+            batch_size=args.batch_size,
+            num_warmup=args.num_warmup,
+            num_iters=args.num_iters,
+        )
+        with open(args.output, "w") as f:
+            json.dump(results, f, indent=2)
+        return
+
     if not os.path.exists(args.image):
         print(f"Error: Image not found: {args.image}", file=sys.stderr)
         sys.exit(1)
 
     all_results = []
 
+    print(f"Profiling {len(args.configs)} model(s) in isolated processes ...\n")
+
     for config_path in args.configs:
-        results = profile_model_tile(
+        rows = run_subprocess(
             config_path, args.image,
             batch_size=args.batch_size,
             num_warmup=args.num_warmup,
             num_iters=args.num_iters,
+            output_path=args.output,
         )
-        all_results.extend(results)
+        all_results.extend(rows)
 
-    print("\n" + "=" * 100)
-    print(f"{'Backbone':<30} {'PatchSize':>10} {'Stride':>7} {'Patches':>9} "
-          f"{'TileTime(s)':>12} {'PerPatch(ms)':>13} {'PeakMem(MB)':>12} {'MPx/s':>8}")
-    print("-" * 100)
-    for r in all_results:
-        print(f"{r['backbone']:<30} {r['patch_size']:>10} {r['stride']:>7} {r['num_patches']:>9} "
-              f"{r['tile_time_s']:>12.3f} {r['per_patch_ms']:>13.2f} {r['peak_gpu_mem_mb']:>12.0f} "
-              f"{r['megapixels_per_sec']:>8.1f}")
-    print("=" * 100)
+    print_table(all_results)
 
     fieldnames = ["backbone", "patch_size", "stride", "num_patches",
                   "tile_time_s", "per_patch_ms", "peak_gpu_mem_mb", "megapixels_per_sec"]
