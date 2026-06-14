@@ -78,9 +78,9 @@ def parse_args():
     parser.add_argument("--full-report", action="store_true", help="Print full report: metrics + inference stats")
     parser.add_argument("--visualize", type=str, default=None, metavar="IMAGE_PATH",
                         help="Path to original Potsdam image (6000x6000) for prediction visualization")
-    parser.add_argument("--patch-size", type=int, default=512,
+    parser.add_argument("--patch-size", type=int, default=256,
                         help="Patch size for sliding-window inference and FLOPs measurement (default: 512)")
-    parser.add_argument("--stride", type=int, default=256,
+    parser.add_argument("--stride", type=int, default=128,
                         help="Stride for sliding-window inference (default: 256)")
     parser.add_argument("--cfg-options", nargs="+", action="append", default=[], help="Override config options")
     args = parser.parse_args()
@@ -107,7 +107,7 @@ def count_parameters(model):
     return total, trainable
 
 
-def measure_inference(model, dataloader, device, patch_size=512, num_warmup=5, num_iters=50):
+def measure_inference(model, dataloader, device, patch_size=256, num_warmup=5, num_iters=50):
     model.eval()
     times = []
 
@@ -148,7 +148,7 @@ def measure_inference(model, dataloader, device, patch_size=512, num_warmup=5, n
     }
 
 
-def measure_flops(model, config, patch_size=512):
+def measure_flops(model, config, patch_size=256):
     try:
         device = next(model.parameters()).device
         dummy_input = torch.randn(1, 3, patch_size, patch_size).to(device)
@@ -173,7 +173,7 @@ def format_flops(flops):
     return f"{flops:.0f} FLOPs"
 
 
-def visualize_prediction(runner, image_path, output_dir, patch_size=512, stride=256):
+def visualize_prediction(runner, image_path, output_dir, patch_size=256, stride=128):
     """Generate prediction visualization for a full Potsdam image (6000x6000).
 
     Uses sliding window inference with logit averaging.
