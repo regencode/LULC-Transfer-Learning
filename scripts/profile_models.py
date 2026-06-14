@@ -48,8 +48,8 @@ def parse_args():
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("configs", nargs="+", type=str, help="Config file paths")
-    parser.add_argument("--patch-size", type=int, default=512,
-                        help="Patch size for synthetic input (default: 512)")
+    parser.add_argument("--patch-size", type=int, default=256,
+                        help="Patch size for synthetic input (default: 256)")
     parser.add_argument("--num-warmup", type=int, default=10, help="Number of warmup iterations")
     parser.add_argument("--num-iters", type=int, default=100, help="Number of timed inference iterations")
     parser.add_argument("--output", type=str, default="profile_results.csv", help="Output CSV path")
@@ -70,7 +70,7 @@ def count_parameters(model):
     return total, trainable
 
 
-def measure_flops(model, patch_size=512):
+def measure_flops(model, patch_size=256):
     try:
         device = next(model.parameters()).device
         dummy_input = torch.randn(1, 3, patch_size, patch_size).to(device)
@@ -82,7 +82,7 @@ def measure_flops(model, patch_size=512):
         return None
 
 
-def measure_inference(model, patch_size=512, num_warmup=10, num_iters=100):
+def measure_inference(model, patch_size=256, num_warmup=10, num_iters=100):
     """Measure single-image inference latency and FPS using synthetic input.
 
     Creates a random tensor [1, 3, patch_size, patch_size], passes it through
