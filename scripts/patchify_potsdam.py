@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
-"""Patchify Potsdam images and labels into 256x256 patches with configurable stride.
+"""Patchify Potsdam images and labels into patches with configurable stride.
 
 Reads full-resolution images and RGB labels, slices them into patches,
 converts RGB label patches to class-index maps using ISPRS color mapping,
-and generates train/val/test split files.
+and inherits train/val/test splits from the source dataset.
+
+Requires prepare_potsdam.py to have been run first (generates the source
+splits at <src>/splits/).
 
 Usage:
     python scripts/patchify_potsdam.py --src data/potsdam --dst data/potsdam_patch256 --patch-size 256 --stride 128
+    python scripts/patchify_potsdam.py --src data/potsdam --dst data/potsdam_patch512 --patch-size 512 --stride 256
 """
 
 import argparse
@@ -15,7 +19,6 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 from tqdm import tqdm
-from sklearn.model_selection import train_test_split
 
 ISPRS_COLOR_MAP = {
     (255, 255, 255): 0,
@@ -33,7 +36,6 @@ def parse_args():
     parser.add_argument("--dst", type=str, default="data/potsdam_patch256")
     parser.add_argument("--patch-size", type=int, default=256)
     parser.add_argument("--stride", type=int, default=128)
-    parser.add_argument("--seed", type=int, default=42)
     return parser.parse_args()
 
 
@@ -91,6 +93,13 @@ def main():
     dst_img.mkdir(parents=True, exist_ok=True)
     dst_ann.mkdir(parents=True, exist_ok=True)
 
+    splits_src = src / "splits"
+    if not splits_src.is_dir():
+        raise FileNotFoundError(
+            f"Splits directory not found at {splits_src}. "
+            f"Run prepare_potsdam.py first to generate the source dataset with splits."
+        )
+
     image_files = sorted([f for f in (src / "images").iterdir() if f.suffix == ".tif"])
     print(f"Found {len(image_files)} images to patchify (patch_size={args.patch_size}, stride={args.stride})")
 
@@ -119,25 +128,30 @@ def main():
 
     print(f"Created {len(all_stems)} patches from {len(image_files)} images")
 
+    img_to_split = {}
+    for split_name in ["train", "val", "test"]:
+        split_file = splits_src / f"{split_name}.txt"
+        if not split_file.is_file():
+            raise FileNotFoundError(
+                f"Split file not found: {split_file}. "
+                f"Run prepare_potsdam.py first to generate the source dataset with splits."
+            )
+        with open(split_file) as f:
+            for line in f:
+                img_to_split[line.strip()] = split_name
+
     splits_dir = dst / "splits"
     splits_dir.mkdir(parents=True, exist_ok=True)
-
-    image_stems = sorted(set(s.rsplit("_", 1)[0] for s in all_stems))
-    train_imgs, val_imgs = train_test_split(image_stems, train_size=0.8, random_state=args.seed)
-    test_imgs, val_imgs = train_test_split(val_imgs, test_size=0.5, random_state=args.seed)
-
-    img_to_splits = {}
-    for img in train_imgs:
-        img_to_splits[img] = "train"
-    for img in val_imgs:
-        img_to_splits[img] = "val"
-    for img in test_imgs:
-        img_to_splits[img] = "test"
 
     split_patches = {"train": [], "val": [], "test": []}
     for stem in all_stems:
         parent_img = stem.rsplit("_", 1)[0]
-        split_patches[img_to_splits[parent_img]].append(stem)
+        if parent_img not in img_to_split:
+            raise ValueError(
+                f"Parent image '{parent_img}' for patch '{stem}' not found in source splits. "
+                f"Ensure prepare_potsdam.py was run with the same source data."
+            )
+        split_patches[img_to_split[parent_img]].append(stem)
 
     for split_name, patches in split_patches.items():
         out_path = splits_dir / f"{split_name}.txt"
